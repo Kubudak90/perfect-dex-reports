@@ -1,0 +1,14 @@
+{
+  "id": "37",
+  "subject": "Mobile responsive and theme implementation",
+  "description": "Phase 3, Week 10 - Frontend Lead: Ensure all pages are mobile responsive, implement dark/light theme switching with proper persistence, optimize touch interactions.",
+  "activeForm": "Implementing mobile and themes",
+  "status": "pending",
+  "blocks": [
+    "38"
+  ],
+  "blockedBy": [
+    "36"
+  ],
+  "owner": "Frontend Lead"
+}

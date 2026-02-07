@@ -1,0 +1,12 @@
+{
+  "id": "50",
+  "subject": "Public launch (Week 16)",
+  "description": "Phase 4, Week 16 - All Teams: Remove whitelist, open to public, monitor metrics, handle support requests, stabilize system. Set up bug bounty program on Immunefi.",
+  "activeForm": "Public launching",
+  "status": "pending",
+  "blocks": [],
+  "blockedBy": [
+    "49"
+  ],
+  "owner": "CTO"
+}

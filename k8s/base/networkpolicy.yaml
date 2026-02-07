@@ -1,0 +1,160 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-network-policy
+  namespace: basebook
+  labels:
+    app: basebook-dex
+    component: backend
+spec:
+  podSelector:
+    matchLabels:
+      app: basebook-dex
+      component: backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Ingress Controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 4000
+        - protocol: TCP
+          port: 4001
+    # Allow from Prometheus
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090
+  egress:
+    # Allow to Router
+    - to:
+        - podSelector:
+            matchLabels:
+              component: router
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow to PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              component: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow to Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              component: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow external RPC
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 8545
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: router-network-policy
+  namespace: basebook
+  labels:
+    app: basebook-dex
+    component: router
+spec:
+  podSelector:
+    matchLabels:
+      app: basebook-dex
+      component: router
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Backend
+    - from:
+        - podSelector:
+            matchLabels:
+              component: backend
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow from Prometheus
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9091
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-network-policy
+  namespace: basebook
+  labels:
+    app: basebook-dex
+    component: frontend
+spec:
+  podSelector:
+    matchLabels:
+      app: basebook-dex
+      component: frontend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Ingress Controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow external (for SSR)
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443

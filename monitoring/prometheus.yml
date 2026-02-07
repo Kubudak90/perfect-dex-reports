@@ -1,0 +1,73 @@
+# ═══════════════════════════════════════════════════════════════
+# Prometheus Configuration for BaseBook DEX
+# ═══════════════════════════════════════════════════════════════
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'basebook-dex'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+# Scrape configurations
+scrape_configs:
+  # ═════════════════════════════════════════════════════════════
+  # Backend API
+  # ═════════════════════════════════════════════════════════════
+  - job_name: 'backend-api'
+    static_configs:
+      - targets: ['backend:4000']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # ═════════════════════════════════════════════════════════════
+  # Rust Router
+  # ═════════════════════════════════════════════════════════════
+  - job_name: 'rust-router'
+    static_configs:
+      - targets: ['router:8080']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # ═════════════════════════════════════════════════════════════
+  # PostgreSQL Exporter
+  # ═════════════════════════════════════════════════════════════
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+
+  # ═════════════════════════════════════════════════════════════
+  # Redis Exporter
+  # ═════════════════════════════════════════════════════════════
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  # ═════════════════════════════════════════════════════════════
+  # Prometheus Self-Monitoring
+  # ═════════════════════════════════════════════════════════════
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+
+  # ═════════════════════════════════════════════════════════════
+  # Node Exporter (if deployed)
+  # ═════════════════════════════════════════════════════════════
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s

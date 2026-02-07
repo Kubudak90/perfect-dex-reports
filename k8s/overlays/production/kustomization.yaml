@@ -1,0 +1,73 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: basebook
+
+bases:
+  - ../../base
+
+commonLabels:
+  environment: production
+
+patches:
+  # Production-ready replicas
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: backend
+      spec:
+        replicas: 3
+    target:
+      kind: Deployment
+      name: backend
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: router
+      spec:
+        replicas: 2
+    target:
+      kind: Deployment
+      name: router
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: frontend
+      spec:
+        replicas: 2
+    target:
+      kind: Deployment
+      name: frontend
+
+  # Stricter PDB for production
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: backend-pdb
+      spec:
+        minAvailable: 2
+    target:
+      kind: PodDisruptionBudget
+      name: backend-pdb
+
+images:
+  - name: ghcr.io/basebook/backend
+    newTag: main-latest
+  - name: ghcr.io/basebook/router
+    newTag: main-latest
+  - name: ghcr.io/basebook/frontend
+    newTag: main-latest
+
+configMapGenerator:
+  - name: basebook-config
+    behavior: merge
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - NEXT_PUBLIC_API_URL=https://api.basebook.xyz

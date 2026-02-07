@@ -1,0 +1,15 @@
+{
+  "id": "18",
+  "subject": "Complete Hook integration tests",
+  "description": "Phase 2, Week 8 - Solidity Researcher: Write comprehensive integration tests for all hooks interacting with PoolManager. Test edge cases, gas consumption, and security scenarios.",
+  "activeForm": "Testing Hook integrations",
+  "status": "pending",
+  "blocks": [
+    "29",
+    "51"
+  ],
+  "blockedBy": [
+    "17"
+  ],
+  "owner": "Solidity Researcher"
+}

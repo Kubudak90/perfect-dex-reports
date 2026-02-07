@@ -1,0 +1,44 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: backend-pdb
+  namespace: basebook
+  labels:
+    app: basebook-dex
+    component: backend
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: basebook-dex
+      component: backend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: router-pdb
+  namespace: basebook
+  labels:
+    app: basebook-dex
+    component: router
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: basebook-dex
+      component: router
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend-pdb
+  namespace: basebook
+  labels:
+    app: basebook-dex
+    component: frontend
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: basebook-dex
+      component: frontend

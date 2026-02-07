@@ -1,0 +1,14 @@
+{
+  "id": "15",
+  "subject": "Implement DynamicFeeHook and OracleHook",
+  "description": "Phase 2, Week 5 - Solidity Researcher: Implement DynamicFeeHook for volatility-based fee adjustment and OracleHook for TWAP price oracle. Include comprehensive tests for each hook.",
+  "activeForm": "Implementing DynamicFeeHook and OracleHook",
+  "status": "pending",
+  "blocks": [
+    "16"
+  ],
+  "blockedBy": [
+    "4"
+  ],
+  "owner": "Solidity Researcher"
+}

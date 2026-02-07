@@ -1,0 +1,14 @@
+{
+  "id": "3",
+  "subject": "Implement PositionManager with NFT support",
+  "description": "Phase 1, Week 3 - Solidity Lead: Implement PositionManager for liquidity positions as NFTs, integrate Permit2 for gasless approvals. Handle mint, burn, and collect fees operations.",
+  "activeForm": "Implementing PositionManager",
+  "status": "pending",
+  "blocks": [
+    "4"
+  ],
+  "blockedBy": [
+    "2"
+  ],
+  "owner": "Solidity Lead"
+}

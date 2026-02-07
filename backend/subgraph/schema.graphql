@@ -1,0 +1,342 @@
+# ═══════════════════════════════════════════════════════════════
+# BaseBook DEX - The Graph Schema
+# ═══════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════
+# PROTOCOL
+# ═══════════════════════════════════════════════════════════════
+
+"""
+Protocol-level data aggregated across all pools
+"""
+type Protocol @entity {
+  id: ID! # "1"
+
+  # Counts
+  poolCount: Int!
+  txCount: BigInt!
+
+  # Volume
+  totalVolumeUSD: BigDecimal!
+  totalVolumeToken0: BigDecimal!
+  totalVolumeToken1: BigDecimal!
+
+  # TVL
+  totalValueLockedUSD: BigDecimal!
+
+  # Fees
+  totalFeesUSD: BigDecimal!
+
+  # Updated
+  updatedAt: BigInt!
+}
+
+# ═══════════════════════════════════════════════════════════════
+# TOKEN
+# ═══════════════════════════════════════════════════════════════
+
+"""
+Token entity
+"""
+type Token @entity {
+  id: ID! # token address
+  symbol: String!
+  name: String!
+  decimals: Int!
+
+  # Volume
+  volume: BigDecimal!
+  volumeUSD: BigDecimal!
+
+  # TVL
+  totalValueLocked: BigDecimal!
+  totalValueLockedUSD: BigDecimal!
+
+  # Price
+  derivedETH: BigDecimal # Token price in ETH
+  priceUSD: BigDecimal # Token price in USD
+
+  # Relationships
+  pools: [Pool!]! @derivedFrom(field: "token0")
+
+  # Counts
+  txCount: BigInt!
+
+  # Metadata
+  createdAtTimestamp: BigInt!
+  createdAtBlockNumber: BigInt!
+}
+
+# ═══════════════════════════════════════════════════════════════
+# POOL
+# ═══════════════════════════════════════════════════════════════
+
+"""
+Pool entity
+"""
+type Pool @entity {
+  id: ID! # poolId (bytes32)
+
+  # Tokens
+  token0: Token!
+  token1: Token!
+
+  # Config
+  feeTier: Int!
+  tickSpacing: Int!
+  hooks: Bytes
+
+  # Current state
+  sqrtPrice: BigInt!
+  tick: Int!
+  liquidity: BigInt!
+
+  # Volume
+  volumeToken0: BigDecimal!
+  volumeToken1: BigDecimal!
+  volumeUSD: BigDecimal!
+
+  # TVL
+  totalValueLockedToken0: BigDecimal!
+  totalValueLockedToken1: BigDecimal!
+  totalValueLockedUSD: BigDecimal!
+
+  # Fees
+  feesUSD: BigDecimal!
+
+  # Counts
+  txCount: BigInt!
+
+  # Relationships
+  swaps: [Swap!]! @derivedFrom(field: "pool")
+  mints: [Mint!]! @derivedFrom(field: "pool")
+  burns: [Burn!]! @derivedFrom(field: "pool")
+
+  # Time-series data
+  poolHourData: [PoolHourData!]! @derivedFrom(field: "pool")
+  poolDayData: [PoolDayData!]! @derivedFrom(field: "pool")
+
+  # Metadata
+  createdAtTimestamp: BigInt!
+  createdAtBlockNumber: BigInt!
+}
+
+# ═══════════════════════════════════════════════════════════════
+# TRANSACTIONS
+# ═══════════════════════════════════════════════════════════════
+
+"""
+Transaction entity
+"""
+type Transaction @entity(immutable: true) {
+  id: ID! # txHash
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  gasUsed: BigInt!
+  gasPrice: BigInt!
+
+  # Relationships
+  swaps: [Swap!]! @derivedFrom(field: "transaction")
+  mints: [Mint!]! @derivedFrom(field: "transaction")
+  burns: [Burn!]! @derivedFrom(field: "transaction")
+}
+
+"""
+Swap event
+"""
+type Swap @entity(immutable: true) {
+  id: ID! # txHash-logIndex
+  transaction: Transaction!
+  pool: Pool!
+
+  # Participants
+  sender: Bytes!
+
+  # Token amounts
+  amount0: BigDecimal!
+  amount1: BigDecimal!
+  amountUSD: BigDecimal!
+
+  # Price after swap
+  sqrtPriceX96: BigInt!
+  tick: Int!
+
+  # Metadata
+  logIndex: BigInt!
+  timestamp: BigInt!
+}
+
+"""
+Mint (add liquidity) event
+"""
+type Mint @entity(immutable: true) {
+  id: ID! # txHash-logIndex
+  transaction: Transaction!
+  pool: Pool!
+
+  # Position
+  owner: Bytes!
+  sender: Bytes!
+
+  # Tick range
+  tickLower: Int!
+  tickUpper: Int!
+
+  # Amounts
+  amount0: BigDecimal!
+  amount1: BigDecimal!
+  amountUSD: BigDecimal!
+
+  # Liquidity added
+  liquidity: BigInt!
+
+  # Metadata
+  logIndex: BigInt!
+  timestamp: BigInt!
+}
+
+"""
+Burn (remove liquidity) event
+"""
+type Burn @entity(immutable: true) {
+  id: ID! # txHash-logIndex
+  transaction: Transaction!
+  pool: Pool!
+
+  # Position
+  owner: Bytes!
+
+  # Tick range
+  tickLower: Int!
+  tickUpper: Int!
+
+  # Amounts
+  amount0: BigDecimal!
+  amount1: BigDecimal!
+  amountUSD: BigDecimal!
+
+  # Liquidity removed
+  liquidity: BigInt!
+
+  # Metadata
+  logIndex: BigInt!
+  timestamp: BigInt!
+}
+
+# ═══════════════════════════════════════════════════════════════
+# TIME-SERIES DATA
+# ═══════════════════════════════════════════════════════════════
+
+"""
+Hourly aggregated data for a pool
+"""
+type PoolHourData @entity {
+  id: ID! # poolId-hourStartUnix
+  pool: Pool!
+  periodStartUnix: Int!
+
+  # OHLC
+  open: BigDecimal!
+  high: BigDecimal!
+  low: BigDecimal!
+  close: BigDecimal!
+
+  # Volume
+  volumeToken0: BigDecimal!
+  volumeToken1: BigDecimal!
+  volumeUSD: BigDecimal!
+
+  # TVL
+  tvlUSD: BigDecimal!
+
+  # Fees
+  feesUSD: BigDecimal!
+
+  # Counts
+  txCount: BigInt!
+
+  # State
+  liquidity: BigInt!
+  sqrtPrice: BigInt!
+  tick: Int!
+}
+
+"""
+Daily aggregated data for a pool
+"""
+type PoolDayData @entity {
+  id: ID! # poolId-dayStartUnix
+  pool: Pool!
+  date: Int! # Unix timestamp for start of day
+
+  # OHLC
+  open: BigDecimal!
+  high: BigDecimal!
+  low: BigDecimal!
+  close: BigDecimal!
+
+  # Volume
+  volumeToken0: BigDecimal!
+  volumeToken1: BigDecimal!
+  volumeUSD: BigDecimal!
+
+  # TVL
+  tvlUSD: BigDecimal!
+
+  # Fees
+  feesUSD: BigDecimal!
+
+  # Counts
+  txCount: BigInt!
+
+  # State
+  liquidity: BigInt!
+  sqrtPrice: BigInt!
+  tick: Int!
+}
+
+"""
+Daily aggregated data for a token
+"""
+type TokenDayData @entity {
+  id: ID! # tokenAddress-dayStartUnix
+  token: Token!
+  date: Int!
+
+  # Volume
+  volume: BigDecimal!
+  volumeUSD: BigDecimal!
+
+  # TVL
+  totalValueLocked: BigDecimal!
+  totalValueLockedUSD: BigDecimal!
+
+  # Price
+  priceUSD: BigDecimal!
+
+  # Open/Close
+  open: BigDecimal!
+  high: BigDecimal!
+  low: BigDecimal!
+  close: BigDecimal!
+}
+
+"""
+Protocol-level daily data
+"""
+type ProtocolDayData @entity {
+  id: ID! # dayStartUnix
+  date: Int!
+
+  # Volume
+  volumeUSD: BigDecimal!
+
+  # TVL
+  tvlUSD: BigDecimal!
+
+  # Fees
+  feesUSD: BigDecimal!
+
+  # Counts
+  txCount: BigInt!
+}

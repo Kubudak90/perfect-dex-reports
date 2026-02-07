@@ -1,0 +1,14 @@
+{
+  "id": "25",
+  "subject": "Build Portfolio page and position management",
+  "description": "Phase 2, Week 7 - Frontend Lead: Create Portfolio page with PositionsList, SwapHistory, PnLChart, FeeEarnings, TokenBalances components. Implement position management (collect fees, remove liquidity).",
+  "activeForm": "Building Portfolio page",
+  "status": "pending",
+  "blocks": [
+    "26"
+  ],
+  "blockedBy": [
+    "24"
+  ],
+  "owner": "Frontend Lead"
+}

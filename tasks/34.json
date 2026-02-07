@@ -1,0 +1,14 @@
+{
+  "id": "34",
+  "subject": "Backend load testing and optimization",
+  "description": "Phase 3, Week 11 - Backend Senior: Conduct comprehensive load testing using k6, optimize slow queries, tune connection pooling, ensure system handles target throughput.",
+  "activeForm": "Load testing backend",
+  "status": "pending",
+  "blocks": [
+    "35"
+  ],
+  "blockedBy": [
+    "33"
+  ],
+  "owner": "Backend Senior"
+}

@@ -1,0 +1,43 @@
+{
+  "name": "@basebook/abis",
+  "version": "1.0.0",
+  "description": "BaseBook DEX Contract ABIs and addresses",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./PoolManager": "./PoolManager.ts",
+    "./SwapRouter": "./SwapRouter.ts",
+    "./Quoter": "./Quoter.ts",
+    "./PositionManager": "./PositionManager.ts"
+  },
+  "files": [
+    "*.json",
+    "*.ts",
+    "README.md"
+  ],
+  "keywords": [
+    "basebook",
+    "dex",
+    "base",
+    "l2",
+    "abi",
+    "smart-contracts",
+    "ethereum",
+    "defi"
+  ],
+  "author": "BaseBook Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "viem": "^2.0.0",
+    "wagmi": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "viem": {
+      "optional": true
+    },
+    "wagmi": {
+      "optional": true
+    }
+  }
+}

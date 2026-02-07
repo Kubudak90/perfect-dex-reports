@@ -1,0 +1,12 @@
+{
+  "id": "28",
+  "subject": "Optimize router performance and caching",
+  "description": "Phase 2, Week 7-8 - Rust Engineer: Performance tuning with parallelization (rayon), implement caching layer, optimize memory usage. Target <10ms latency for route calculation.",
+  "activeForm": "Optimizing router performance",
+  "status": "pending",
+  "blocks": [],
+  "blockedBy": [
+    "27"
+  ],
+  "owner": "Rust Engineer"
+}

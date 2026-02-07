@@ -1,0 +1,12 @@
+{
+  "id": "1",
+  "subject": "Setup Foundry project and Ekubo EVM fork",
+  "description": "Phase 1, Week 1 - Solidity Lead: Initialize Foundry project structure, fork Ekubo EVM codebase, analyze the architecture, and perform first testnet deployment. Setup contracts/ directory structure with proper organization.",
+  "activeForm": "Setting up Foundry and Ekubo fork",
+  "status": "pending",
+  "blocks": [
+    "2"
+  ],
+  "blockedBy": [],
+  "owner": "Solidity Lead"
+}

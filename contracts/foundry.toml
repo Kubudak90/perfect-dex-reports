@@ -1,0 +1,52 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+script = "script"
+cache_path = "cache"
+solc = "0.8.24"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 1_000_000
+via_ir = true
+
+# Formatting
+line_length = 120
+tab_width = 4
+bracket_spacing = true
+
+# Testing
+fuzz = { runs = 10000, max_test_rejects = 100000 }
+invariant = { runs = 1000, depth = 20, fail_on_revert = true }
+
+# Gas reporting
+gas_reports = ["*"]
+
+# Remappings
+remappings = [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "@permit2/=lib/permit2/",
+    "forge-std/=lib/forge-std/src/",
+]
+
+# Base chain configuration
+[rpc_endpoints]
+base = "${BASE_RPC_URL}"
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
+
+[etherscan]
+base = { key = "${BASESCAN_API_KEY}", url = "https://api.basescan.org/api" }
+base_sepolia = { key = "${BASESCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api" }
+
+# CI/test profile (disables optimizer to avoid Yul stack-too-deep in complex tests)
+# Usage: FOUNDRY_PROFILE=ci forge test
+[profile.ci]
+optimizer = false
+via_ir = true
+
+# Fork test profile
+# Usage: BASE_RPC_URL=https://mainnet.base.org forge test --match-path test/fork/ -vvv
+[profile.fork]
+fork_url = "${BASE_RPC_URL}"
+fork_block_number = 26_000_000

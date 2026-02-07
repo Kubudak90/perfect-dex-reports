@@ -1,0 +1,137 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: basebook-staging
+
+bases:
+  - ../../base
+
+namePrefix: staging-
+
+commonLabels:
+  environment: staging
+
+patches:
+  # Reduce replicas for staging
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: backend
+      spec:
+        replicas: 2
+    target:
+      kind: Deployment
+      name: backend
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: router
+      spec:
+        replicas: 1
+    target:
+      kind: Deployment
+      name: router
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: frontend
+      spec:
+        replicas: 1
+    target:
+      kind: Deployment
+      name: frontend
+
+  # Adjust HPA for staging
+  - patch: |-
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: backend-hpa
+      spec:
+        minReplicas: 2
+        maxReplicas: 5
+    target:
+      kind: HorizontalPodAutoscaler
+      name: backend-hpa
+
+  - patch: |-
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: router-hpa
+      spec:
+        minReplicas: 1
+        maxReplicas: 3
+    target:
+      kind: HorizontalPodAutoscaler
+      name: router-hpa
+
+  - patch: |-
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: frontend-hpa
+      spec:
+        minReplicas: 1
+        maxReplicas: 4
+    target:
+      kind: HorizontalPodAutoscaler
+      name: frontend-hpa
+
+  # Update Ingress hosts for staging
+  - patch: |-
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: basebook-ingress
+      spec:
+        tls:
+          - hosts:
+              - staging.basebook.xyz
+              - staging-api.basebook.xyz
+            secretName: basebook-staging-tls
+        rules:
+          - host: staging.basebook.xyz
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: frontend-service
+                      port:
+                        number: 3000
+          - host: staging-api.basebook.xyz
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: backend-service
+                      port:
+                        number: 4000
+    target:
+      kind: Ingress
+      name: basebook-ingress
+
+images:
+  - name: ghcr.io/basebook/backend
+    newTag: develop-latest
+  - name: ghcr.io/basebook/router
+    newTag: develop-latest
+  - name: ghcr.io/basebook/frontend
+    newTag: develop-latest
+
+configMapGenerator:
+  - name: basebook-config
+    behavior: merge
+    literals:
+      - NODE_ENV=staging
+      - LOG_LEVEL=debug
+      - NEXT_PUBLIC_API_URL=https://staging-api.basebook.xyz

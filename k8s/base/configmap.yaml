@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: basebook-config
+  namespace: basebook
+  labels:
+    app: basebook-dex
+data:
+  # Blockchain
+  CHAIN_ID: "8453"
+  RPC_URL: "https://base.llamarpc.com"
+
+  # Services
+  ROUTER_URL: "http://router-service:8080"
+  GRAPH_URL: "http://graph-node:8000/subgraphs/name/basebook/dex"
+
+  # Server
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+
+  # CORS
+  CORS_ORIGIN: "https://basebook.xyz"
+
+  # Rate Limiting
+  RATE_LIMIT_WINDOW: "60000"
+  RATE_LIMIT_MAX_REQUESTS: "100"
+
+  # Feature Flags
+  ENABLE_SWAP: "true"
+  ENABLE_LIQUIDITY: "true"
+  ENABLE_ANALYTICS: "true"
+  ENABLE_GOVERNANCE: "false"
+
+  # Database
+  DATABASE_POOL_MIN: "2"
+  DATABASE_POOL_MAX: "10"
+
+  # Redis
+  REDIS_KEY_PREFIX: "basebook:"

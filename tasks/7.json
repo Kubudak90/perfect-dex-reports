@@ -1,0 +1,16 @@
+{
+  "id": "7",
+  "subject": "Implement Quote endpoint and Subgraph draft",
+  "description": "Phase 1, Week 3 - Backend Senior: Create /quote endpoint that calls on-chain Quoter contract. Draft The Graph subgraph schema for indexing Swap, Mint, Burn events from PoolManager.",
+  "activeForm": "Implementing Quote endpoint and Subgraph",
+  "status": "pending",
+  "blocks": [
+    "8",
+    "12",
+    "53"
+  ],
+  "blockedBy": [
+    "6"
+  ],
+  "owner": "Backend Senior"
+}

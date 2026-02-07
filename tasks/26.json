@@ -1,0 +1,15 @@
+{
+  "id": "26",
+  "subject": "Build Analytics page with charts",
+  "description": "Phase 2, Week 8 - Frontend Lead: Create Analytics dashboard with OverviewStats, VolumeChart, TVLChart, FeesChart, TopPools, TopTokens components. Integrate TradingView Lightweight Charts.",
+  "activeForm": "Building Analytics page",
+  "status": "pending",
+  "blocks": [
+    "36",
+    "54"
+  ],
+  "blockedBy": [
+    "25"
+  ],
+  "owner": "Frontend Lead"
+}

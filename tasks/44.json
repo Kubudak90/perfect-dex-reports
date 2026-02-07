@@ -1,0 +1,14 @@
+{
+  "id": "44",
+  "subject": "Complete test suite and bug bash",
+  "description": "Phase 3, Week 9-11 - QA Engineer: Complete all test suites, conduct bug bash session, perform regression testing, document all found issues and verify fixes.",
+  "activeForm": "Bug bash and testing",
+  "status": "pending",
+  "blocks": [
+    "45"
+  ],
+  "blockedBy": [
+    "43"
+  ],
+  "owner": "QA Engineer"
+}

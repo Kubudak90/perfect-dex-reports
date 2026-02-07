@@ -1,0 +1,14 @@
+{
+  "id": "10",
+  "subject": "Build TokenInput and TokenSelector components",
+  "description": "Phase 1, Week 2 - Frontend Lead: Create TokenInput component for amount entry with balance display, TokenSelector modal with search, and TokenSelectorModal with token list. Implement token logo display and formatting utilities.",
+  "activeForm": "Building token components",
+  "status": "pending",
+  "blocks": [
+    "11"
+  ],
+  "blockedBy": [
+    "9"
+  ],
+  "owner": "Frontend Lead"
+}

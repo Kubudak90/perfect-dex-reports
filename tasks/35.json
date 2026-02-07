@@ -1,0 +1,14 @@
+{
+  "id": "35",
+  "subject": "Production configuration and security hardening",
+  "description": "Phase 3, Week 12 - Backend Senior: Configure production environment, implement security best practices (CORS, CSP, secrets management), setup proper logging and monitoring.",
+  "activeForm": "Hardening production config",
+  "status": "pending",
+  "blocks": [
+    "46"
+  ],
+  "blockedBy": [
+    "34"
+  ],
+  "owner": "Backend Senior"
+}

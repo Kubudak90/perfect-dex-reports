@@ -1,0 +1,14 @@
+{
+  "id": "38",
+  "subject": "Frontend E2E tests and performance optimization",
+  "description": "Phase 3, Week 11 - Frontend Lead: Write Playwright E2E tests for critical flows (swap, add liquidity). Optimize bundle size, implement code splitting, achieve Lighthouse 90+ score.",
+  "activeForm": "Testing and optimizing frontend",
+  "status": "pending",
+  "blocks": [
+    "39"
+  ],
+  "blockedBy": [
+    "37"
+  ],
+  "owner": "Frontend Lead"
+}

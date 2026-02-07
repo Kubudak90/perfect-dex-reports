@@ -1,0 +1,14 @@
+{
+  "id": "48",
+  "subject": "Mainnet deployment preparation",
+  "description": "Phase 4, Week 13-14 - All Teams: Prepare mainnet deployment scripts, setup multisig wallet for admin functions, configure production infrastructure, verify all contracts.",
+  "activeForm": "Preparing mainnet deployment",
+  "status": "pending",
+  "blocks": [
+    "49"
+  ],
+  "blockedBy": [
+    "46"
+  ],
+  "owner": "CTO"
+}

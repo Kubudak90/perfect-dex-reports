@@ -1,0 +1,14 @@
+{
+  "id": "20",
+  "subject": "Implement Pool detail and chart data endpoints",
+  "description": "Phase 2, Week 6 - Backend Senior: Create pool detail endpoints with full statistics, OHLCV chart data from pool_hour_data/pool_day_data tables, volume and TVL historical data.",
+  "activeForm": "Implementing Pool detail endpoints",
+  "status": "pending",
+  "blocks": [
+    "21"
+  ],
+  "blockedBy": [
+    "19"
+  ],
+  "owner": "Backend Senior"
+}

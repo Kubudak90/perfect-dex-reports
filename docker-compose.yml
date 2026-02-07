@@ -1,0 +1,214 @@
+# ═══════════════════════════════════════════════════════════════
+# BaseBook DEX - Local Development Stack
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ═════════════════════════════════════════════════════════════
+  # DATABASES
+  # ═════════════════════════════════════════════════════════════
+  postgres:
+    image: postgres:15-alpine
+    container_name: basebook-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: basebook
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - basebook-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: basebook-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - basebook-network
+
+  # ═════════════════════════════════════════════════════════════
+  # THE GRAPH (Indexer)
+  # ═════════════════════════════════════════════════════════════
+  graph-node:
+    image: graphprotocol/graph-node:latest
+    container_name: basebook-graph-node
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      postgres_host: postgres
+      postgres_user: postgres
+      postgres_pass: postgres
+      postgres_db: basebook
+      ipfs: 'https://ipfs.network.thegraph.com'
+      ethereum: 'base:https://base.llamarpc.com'
+      GRAPH_LOG: info
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8020:8020"
+      - "8030:8030"
+      - "8040:8040"
+    networks:
+      - basebook-network
+
+  # ═════════════════════════════════════════════════════════════
+  # BACKEND SERVICES
+  # ═════════════════════════════════════════════════════════════
+  router:
+    build:
+      context: ./router
+      dockerfile: Dockerfile
+    container_name: basebook-router
+    restart: unless-stopped
+    environment:
+      RUST_LOG: info
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/router", "--health-check"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - basebook-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: basebook-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      router:
+        condition: service_started
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/basebook
+      REDIS_URL: redis://redis:6379
+      ROUTER_URL: http://router:8080
+      GRAPH_URL: http://graph-node:8000/subgraphs/name/basebook/dex
+      RPC_URL: https://base.llamarpc.com
+      CHAIN_ID: 8453
+      LOG_LEVEL: info
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - basebook-network
+
+  # ═════════════════════════════════════════════════════════════
+  # FRONTEND
+  # ═════════════════════════════════════════════════════════════
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: builder
+    container_name: basebook-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_WS_URL: ws://localhost:4000
+      NEXT_PUBLIC_CHAIN_ID: 8453
+      NEXT_PUBLIC_RPC_URL: https://base.llamarpc.com
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    networks:
+      - basebook-network
+
+  # ═════════════════════════════════════════════════════════════
+  # MONITORING
+  # ═════════════════════════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: basebook-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - basebook-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: basebook-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
+      GF_INSTALL_PLUGINS: grafana-clock-panel
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - grafana_data:/var/lib/grafana
+    networks:
+      - basebook-network
+
+# ═══════════════════════════════════════════════════════════════
+# NETWORKS
+# ═══════════════════════════════════════════════════════════════
+networks:
+  basebook-network:
+    driver: bridge
+
+# ═══════════════════════════════════════════════════════════════
+# VOLUMES
+# ═══════════════════════════════════════════════════════════════
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

@@ -1,0 +1,14 @@
+{
+  "id": "2",
+  "subject": "Implement SwapRouter and Quoter contracts",
+  "description": "Phase 1, Week 2 - Solidity Lead: Implement SwapRouter for executing swaps and Quoter contract for price quotes. Include Permit2 support and proper error handling.",
+  "activeForm": "Implementing SwapRouter and Quoter",
+  "status": "pending",
+  "blocks": [
+    "3"
+  ],
+  "blockedBy": [
+    "1"
+  ],
+  "owner": "Solidity Lead"
+}

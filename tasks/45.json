@@ -1,0 +1,14 @@
+{
+  "id": "45",
+  "subject": "Pre-launch security checklist and verification",
+  "description": "Phase 3, Week 12 - QA Engineer: Complete pre-launch security checklist, run dependency scanning (Snyk), perform final security review, verify all critical fixes are deployed.",
+  "activeForm": "Security verification",
+  "status": "pending",
+  "blocks": [
+    "46"
+  ],
+  "blockedBy": [
+    "44"
+  ],
+  "owner": "QA Engineer"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "41",
+  "subject": "Setup Kubernetes manifests and deployment configuration",
+  "description": "QA Engineer: Create Kubernetes deployment manifests for API, WebSocket, and Router services. Configure horizontal pod autoscaling, resource limits, and health checks.",
+  "activeForm": "Setting up Kubernetes",
+  "status": "pending",
+  "blocks": [],
+  "blockedBy": [],
+  "owner": "QA Engineer"
+}

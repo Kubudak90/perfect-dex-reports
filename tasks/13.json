@@ -1,0 +1,12 @@
+{
+  "id": "13",
+  "subject": "Setup Rust router project with pool graph structure",
+  "description": "Phase 1, Week 1-2 - Rust Engineer: Initialize Rust project with Cargo workspace, implement pool graph data structure for routing, setup basic HTTP API skeleton with axum/actix-web.",
+  "activeForm": "Setting up Rust router",
+  "status": "pending",
+  "blocks": [
+    "14"
+  ],
+  "blockedBy": [],
+  "owner": "Rust Engineer"
+}

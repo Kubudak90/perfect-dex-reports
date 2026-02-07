@@ -1,0 +1,12 @@
+{
+  "id": "52",
+  "subject": "Implement Zustand stores for state management",
+  "description": "Frontend Lead: Implement all Zustand stores - useSwapStore, useTokenStore, useSettingsStore, useTransactionStore, useNotificationStore with proper persistence for user preferences.",
+  "activeForm": "Implementing state stores",
+  "status": "pending",
+  "blocks": [],
+  "blockedBy": [
+    "9"
+  ],
+  "owner": "Frontend Lead"
+}

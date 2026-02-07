@@ -1,0 +1,14 @@
+{
+  "id": "17",
+  "subject": "Implement MEVProtectionHook",
+  "description": "Phase 2, Week 7 - Solidity Researcher: Implement MEVProtectionHook for sandwich attack protection. Include commit-reveal scheme or other anti-MEV mechanisms.",
+  "activeForm": "Implementing MEVProtectionHook",
+  "status": "pending",
+  "blocks": [
+    "18"
+  ],
+  "blockedBy": [
+    "16"
+  ],
+  "owner": "Solidity Researcher"
+}

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BaseBook WebSocket Client</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #0a0a0a;
+      color: #fff;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    .status.connected {
+      background: #10b981;
+      color: white;
+    }
+    .status.disconnected {
+      background: #ef4444;
+      color: white;
+    }
+    .controls {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+    button:disabled {
+      background: #4a5568;
+      cursor: not-allowed;
+    }
+    .messages {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .message {
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+    }
+    .message.sent {
+      background: #1e40af;
+    }
+    .message.received {
+      background: #065f46;
+    }
+    .message.error {
+      background: #991b1b;
+    }
+    .timestamp {
+      color: #9ca3af;
+      font-size: 10px;
+    }
+    input, select {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #374151;
+      background: #111;
+      color: white;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🚀 BaseBook WebSocket Client</h1>
+    <p>
+      Status: <span class="status disconnected" id="status">Disconnected</span>
+      <span id="clientId" style="margin-left: 20px;"></span>
+    </p>
+  </div>
+
+  <div class="controls">
+    <h3>Connection</h3>
+    <input type="text" id="wsUrl" value="ws://localhost:3000/ws" style="width: 300px;">
+    <button onclick="connect()" id="connectBtn">Connect</button>
+    <button onclick="disconnect()" id="disconnectBtn" disabled>Disconnect</button>
+    <button onclick="clearMessages()">Clear Messages</button>
+
+    <h3>Subscriptions</h3>
+    <select id="channelType">
+      <option value="prices">Prices (all tokens)</option>
+      <option value="pool">Pool (specific)</option>
+      <option value="pools">Pools (all)</option>
+      <option value="swaps">Swaps (live)</option>
+      <option value="liquidity">Liquidity Events</option>
+    </select>
+    <input type="number" id="chainId" value="8453" placeholder="Chain ID" style="width: 100px;">
+    <input type="text" id="poolId" placeholder="Pool ID (for pool channel)" style="width: 300px;">
+    <button onclick="subscribe()" id="subscribeBtn" disabled>Subscribe</button>
+
+    <h3>Actions</h3>
+    <button onclick="sendPing()" id="pingBtn" disabled>Send Ping</button>
+    <button onclick="changeChain()" id="chainBtn" disabled>Change Chain</button>
+  </div>
+
+  <div class="messages" id="messages">
+    <p style="color: #6b7280;">Messages will appear here...</p>
+  </div>
+
+  <script>
+    let ws = null;
+    let clientId = null;
+
+    function connect() {
+      const url = document.getElementById('wsUrl').value;
+      ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        updateStatus('connected');
+        addMessage('Connected to server', 'sent');
+        document.getElementById('connectBtn').disabled = true;
+        document.getElementById('disconnectBtn').disabled = false;
+        document.getElementById('subscribeBtn').disabled = false;
+        document.getElementById('pingBtn').disabled = false;
+        document.getElementById('chainBtn').disabled = false;
+      };
+
+      ws.onclose = () => {
+        updateStatus('disconnected');
+        addMessage('Disconnected from server', 'error');
+        document.getElementById('connectBtn').disabled = false;
+        document.getElementById('disconnectBtn').disabled = true;
+        document.getElementById('subscribeBtn').disabled = true;
+        document.getElementById('pingBtn').disabled = true;
+        document.getElementById('chainBtn').disabled = true;
+      };
+
+      ws.onerror = (error) => {
+        addMessage(`WebSocket error: ${error.message}`, 'error');
+      };
+
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        handleMessage(message);
+      };
+    }
+
+    function disconnect() {
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+    }
+
+    function subscribe() {
+      const channelType = document.getElementById('channelType').value;
+      const chainId = document.getElementById('chainId').value;
+      const poolId = document.getElementById('poolId').value;
+
+      let channel;
+      if (channelType === 'pool' && poolId) {
+        channel = `pool:${poolId}`;
+      } else if (channelType === 'prices') {
+        channel = `prices:${chainId}`;
+      } else if (channelType === 'pools') {
+        channel = `pools:${chainId}`;
+      } else if (channelType === 'swaps') {
+        channel = `swaps:${chainId}`;
+      } else if (channelType === 'liquidity') {
+        channel = `liquidity:${chainId}`;
+      } else {
+        alert('Please provide pool ID for pool channel');
+        return;
+      }
+
+      send({ type: 'subscribe', channel });
+      addMessage(`Subscribing to: ${channel}`, 'sent');
+    }
+
+    function sendPing() {
+      send({ type: 'ping' });
+      addMessage('Ping sent', 'sent');
+    }
+
+    function changeChain() {
+      const chainId = parseInt(document.getElementById('chainId').value);
+      send({ type: 'setChain', chainId });
+      addMessage(`Changed chain to: ${chainId}`, 'sent');
+    }
+
+    function send(message) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(message));
+      }
+    }
+
+    function handleMessage(message) {
+      switch (message.type) {
+        case 'connected':
+          clientId = message.data.clientId;
+          document.getElementById('clientId').textContent = `Client ID: ${clientId}`;
+          addMessage(`Connected! Client ID: ${clientId}, Chain: ${message.data.chainId}`, 'received');
+          break;
+
+        case 'subscribed':
+          addMessage(`✅ Subscribed to: ${message.channel}`, 'received');
+          break;
+
+        case 'unsubscribed':
+          addMessage(`❌ Unsubscribed from: ${message.channel}`, 'received');
+          break;
+
+        case 'pong':
+          addMessage('Pong received', 'received');
+          break;
+
+        case 'priceUpdate':
+          addMessage(`💰 Price Update [${message.channel}]: ${JSON.stringify(message.data, null, 2)}`, 'received');
+          break;
+
+        case 'poolUpdate':
+          addMessage(`🏊 Pool Update [${message.channel}]: ${JSON.stringify(message.data, null, 2)}`, 'received');
+          break;
+
+        case 'swapEvent':
+          addMessage(`🔄 Swap Event [${message.channel}]: ${JSON.stringify(message.data, null, 2)}`, 'received');
+          break;
+
+        case 'liquidityEvent':
+          addMessage(`💧 Liquidity Event [${message.channel}]: ${JSON.stringify(message.data, null, 2)}`, 'received');
+          break;
+
+        case 'error':
+          addMessage(`❌ Error: ${message.error}`, 'error');
+          break;
+
+        default:
+          addMessage(`Unknown message: ${JSON.stringify(message)}`, 'received');
+      }
+    }
+
+    function addMessage(text, type) {
+      const messagesDiv = document.getElementById('messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+
+      const timestamp = new Date().toLocaleTimeString();
+      messageDiv.innerHTML = `
+        <div class="timestamp">${timestamp}</div>
+        <pre>${text}</pre>
+      `;
+
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function clearMessages() {
+      document.getElementById('messages').innerHTML = '';
+    }
+
+    function updateStatus(status) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = status === 'connected' ? 'Connected' : 'Disconnected';
+      statusEl.className = `status ${status}`;
+    }
+  </script>
+</body>
+</html>

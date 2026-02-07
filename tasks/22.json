@@ -1,0 +1,14 @@
+{
+  "id": "22",
+  "subject": "Complete WebSocket server and load testing",
+  "description": "Phase 2, Week 8 - Backend Senior: Full WebSocket implementation with price streaming, swap notifications, pool updates. Conduct load testing to ensure API can handle expected traffic.",
+  "activeForm": "Completing WebSocket and load testing",
+  "status": "pending",
+  "blocks": [
+    "32"
+  ],
+  "blockedBy": [
+    "21"
+  ],
+  "owner": "Backend Senior"
+}

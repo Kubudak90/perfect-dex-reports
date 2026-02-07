@@ -1,0 +1,12 @@
+{
+  "id": "43",
+  "subject": "Write E2E and API test suites",
+  "description": "QA Engineer: Write comprehensive E2E test suite with Playwright, API test suite with Supertest. Cover all critical user flows and API endpoints.",
+  "activeForm": "Writing test suites",
+  "status": "pending",
+  "blocks": [
+    "44"
+  ],
+  "blockedBy": [],
+  "owner": "QA Engineer"
+}

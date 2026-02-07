@@ -1,0 +1,14 @@
+{
+  "id": "14",
+  "subject": "Implement basic single-hop routing",
+  "description": "Phase 1, Week 3-4 - Rust Engineer: Implement basic path finding for single-hop swaps, integrate with pool data from backend, add swap simulation for price calculation.",
+  "activeForm": "Implementing single-hop routing",
+  "status": "pending",
+  "blocks": [
+    "27"
+  ],
+  "blockedBy": [
+    "13"
+  ],
+  "owner": "Rust Engineer"
+}

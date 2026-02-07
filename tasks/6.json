@@ -1,0 +1,14 @@
+{
+  "id": "6",
+  "subject": "Implement Token and Pool API endpoints with RPC setup",
+  "description": "Phase 1, Week 2 - Backend Senior: Create REST endpoints for tokens (/tokens, /tokens/:address) and pools (/pools, /pools/:id). Setup viem client with multi-provider support and RPC failover.",
+  "activeForm": "Implementing Token and Pool endpoints",
+  "status": "pending",
+  "blocks": [
+    "7"
+  ],
+  "blockedBy": [
+    "5"
+  ],
+  "owner": "Backend Senior"
+}

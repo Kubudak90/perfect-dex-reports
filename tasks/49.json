@@ -1,0 +1,15 @@
+{
+  "id": "49",
+  "subject": "Soft launch with whitelist (Week 15)",
+  "description": "Phase 4, Week 15 - All Teams: Deploy to mainnet with whitelist-only access, monitor system closely, gather initial feedback, fix any critical issues discovered.",
+  "activeForm": "Soft launching",
+  "status": "pending",
+  "blocks": [
+    "50"
+  ],
+  "blockedBy": [
+    "47",
+    "48"
+  ],
+  "owner": "CTO"
+}

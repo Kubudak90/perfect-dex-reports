@@ -1,0 +1,82 @@
+# ═══════════════════════════════════════════════════════════════
+# BaseBook DEX - Root .gitignore
+# ═══════════════════════════════════════════════════════════════
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Rust
+target/
+Cargo.lock
+
+# Build outputs
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Cache
+.cache/
+.temp/
+.tmp/
+*.cache
+
+# Coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# Testing
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+
+# Misc
+.npm
+.eslintcache
+.stylelintcache

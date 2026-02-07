@@ -1,0 +1,15 @@
+{
+  "id": "4",
+  "subject": "Achieve 80%+ test coverage and full testnet deployment",
+  "description": "Phase 1, Week 4 - Solidity Lead: Write comprehensive unit tests using Foundry to achieve 80%+ coverage. Deploy all contracts to testnet (Base Sepolia) and verify on Basescan.",
+  "activeForm": "Writing tests and deploying to testnet",
+  "status": "pending",
+  "blocks": [
+    "15",
+    "54"
+  ],
+  "blockedBy": [
+    "3"
+  ],
+  "owner": "Solidity Lead"
+}

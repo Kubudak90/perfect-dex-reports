@@ -1,0 +1,12 @@
+{
+  "id": "53",
+  "subject": "Deploy and index The Graph Subgraph",
+  "description": "Backend Senior: Complete and deploy The Graph subgraph, define all entity mappings (Pool, Token, Swap, Position), setup indexing for all relevant events from PoolManager contract.",
+  "activeForm": "Deploying subgraph",
+  "status": "pending",
+  "blocks": [],
+  "blockedBy": [
+    "7"
+  ],
+  "owner": "Backend Senior"
+}

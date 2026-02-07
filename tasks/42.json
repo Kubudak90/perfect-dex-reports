@@ -1,0 +1,10 @@
+{
+  "id": "42",
+  "subject": "Setup monitoring stack (Prometheus/Grafana)",
+  "description": "QA Engineer: Setup Prometheus for metrics collection, Grafana dashboards for visualization. Create alert rules for critical metrics (latency, errors, resource usage).",
+  "activeForm": "Setting up monitoring",
+  "status": "pending",
+  "blocks": [],
+  "blockedBy": [],
+  "owner": "QA Engineer"
+}

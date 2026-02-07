@@ -1,0 +1,14 @@
+{
+  "id": "29",
+  "subject": "Gas optimization and NatSpec documentation",
+  "description": "Phase 3, Week 9-10 - Solidity Lead: Optimize gas usage across all contracts, add comprehensive NatSpec documentation for all public functions, prepare gas benchmark reports.",
+  "activeForm": "Optimizing gas and documentation",
+  "status": "pending",
+  "blocks": [
+    "30"
+  ],
+  "blockedBy": [
+    "18"
+  ],
+  "owner": "Solidity Lead"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "36",
+  "subject": "UX polish - loading states and error handling",
+  "description": "Phase 3, Week 9 - Frontend Lead: Implement consistent loading states with skeletons, standardize error handling UI, add toast notifications, improve form validation feedback.",
+  "activeForm": "Polishing UX",
+  "status": "pending",
+  "blocks": [
+    "37"
+  ],
+  "blockedBy": [
+    "26"
+  ],
+  "owner": "Frontend Lead"
+}

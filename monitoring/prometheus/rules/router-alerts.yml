@@ -1,0 +1,141 @@
+# ═══════════════════════════════════════════════════════════════
+# BaseBook DEX - Router Alert Rules
+# ═══════════════════════════════════════════════════════════════
+
+groups:
+  - name: router_alerts
+    interval: 30s
+    rules:
+      # ═════════════════════════════════════════════════════════
+      # ROUTING PERFORMANCE
+      # ═════════════════════════════════════════════════════════
+      - alert: SlowRouteCalculation
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(route_calculation_duration_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: router
+        annotations:
+          summary: "Slow route calculation detected"
+          description: "P95 route calculation time is {{ $value | humanizeDuration }}"
+          impact: "Swap quotes taking longer than expected"
+          action: "Check CPU usage and pool graph size"
+
+      - alert: HighRouteFailureRate
+        expr: |
+          (
+            sum(rate(route_calculations_failed_total[5m]))
+            /
+            sum(rate(route_calculations_total[5m]))
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: router
+        annotations:
+          summary: "High route calculation failure rate"
+          description: "{{ $value | humanizePercentage }} of route calculations are failing"
+          impact: "Some swaps may not be possible"
+          action: "Check pool data synchronization and graph integrity"
+
+      - alert: NoRoutesFound
+        expr: |
+          (
+            sum(rate(routes_not_found_total[5m]))
+            /
+            sum(rate(route_calculations_total[5m]))
+          ) * 100 > 20
+        for: 10m
+        labels:
+          severity: critical
+          component: router
+        annotations:
+          summary: "High rate of 'no route found' errors"
+          description: "{{ $value | humanizePercentage }} of route requests have no valid path"
+          impact: "Many token pairs cannot be swapped"
+          action: "Check pool liquidity and graph connectivity"
+
+      # ═════════════════════════════════════════════════════════
+      # RESOURCE USAGE
+      # ═════════════════════════════════════════════════════════
+      - alert: RouterHighCPU
+        expr: |
+          rate(process_cpu_seconds_total{job="rust-router"}[5m]) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          component: router
+        annotations:
+          summary: "Router CPU usage is high"
+          description: "CPU usage is {{ $value }}% (threshold: 80%)"
+          impact: "Route calculations may be slower"
+          action: "Consider scaling router pods"
+
+      - alert: RouterHighMemory
+        expr: |
+          process_resident_memory_bytes{job="rust-router"} / 1024 / 1024 / 1024 > 1.5
+        for: 10m
+        labels:
+          severity: warning
+          component: router
+        annotations:
+          summary: "Router memory usage is high"
+          description: "Memory usage is {{ $value | humanize }}GB (threshold: 1.5GB)"
+          impact: "Risk of OOMKill"
+          action: "Investigate memory leaks or increase limits"
+
+      # ═════════════════════════════════════════════════════════
+      # POOL GRAPH
+      # ═════════════════════════════════════════════════════════
+      - alert: PoolGraphOutdated
+        expr: |
+          time() - pool_graph_last_update_timestamp > 300
+        for: 5m
+        labels:
+          severity: warning
+          component: router
+        annotations:
+          summary: "Pool graph data is outdated"
+          description: "Pool graph was last updated {{ $value | humanizeDuration }} ago"
+          impact: "Routes may be suboptimal or incorrect"
+          action: "Check pool data sync mechanism"
+
+      - alert: PoolGraphSizeAnomaly
+        expr: |
+          abs(
+            pool_graph_nodes_total
+            -
+            avg_over_time(pool_graph_nodes_total[1h])
+          ) / avg_over_time(pool_graph_nodes_total[1h]) > 0.3
+        for: 10m
+        labels:
+          severity: warning
+          component: router
+        annotations:
+          summary: "Pool graph size anomaly detected"
+          description: "Graph size changed by {{ $value | humanizePercentage }}"
+          impact: "Possible data sync issue"
+          action: "Verify pool data integrity"
+
+      # ═════════════════════════════════════════════════════════
+      # CACHE PERFORMANCE
+      # ═════════════════════════════════════════════════════════
+      - alert: LowCacheHitRate
+        expr: |
+          (
+            sum(rate(route_cache_hits_total[5m]))
+            /
+            sum(rate(route_cache_requests_total[5m]))
+          ) * 100 < 50
+        for: 15m
+        labels:
+          severity: info
+          component: router
+        annotations:
+          summary: "Low route cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}"
+          impact: "More CPU usage for route calculations"
+          action: "Review cache TTL and size settings"

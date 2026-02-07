@@ -1,0 +1,14 @@
+{
+  "id": "33",
+  "subject": "Add multi-chain support",
+  "description": "Phase 3, Week 10 - Backend Senior: Add support for multiple chains (Base primary, Arbitrum/Optimism secondary). Implement chain-specific configurations, contract addresses, and RPC providers.",
+  "activeForm": "Adding multi-chain support",
+  "status": "pending",
+  "blocks": [
+    "34"
+  ],
+  "blockedBy": [
+    "32"
+  ],
+  "owner": "Backend Senior"
+}

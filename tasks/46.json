@@ -1,0 +1,18 @@
+{
+  "id": "46",
+  "subject": "External audit coordination (Week 13-14)",
+  "description": "Phase 4, Week 13-14 - CTO/Solidity Lead: Coordinate with audit firm (Cyfrin/Spearbit), provide audit package, answer auditor questions, track findings.",
+  "activeForm": "Coordinating external audit",
+  "status": "pending",
+  "blocks": [
+    "47",
+    "48"
+  ],
+  "blockedBy": [
+    "31",
+    "35",
+    "39",
+    "45"
+  ],
+  "owner": "CTO"
+}

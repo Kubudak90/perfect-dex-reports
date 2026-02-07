@@ -1,0 +1,14 @@
+{
+  "id": "21",
+  "subject": "Implement Analytics endpoints and background workers",
+  "description": "Phase 2, Week 7 - Backend Senior: Create analytics endpoints (protocol stats, volume, TVL, fees). Implement BullMQ workers for price sync, analytics aggregation, and data consistency.",
+  "activeForm": "Implementing Analytics and workers",
+  "status": "pending",
+  "blocks": [
+    "22"
+  ],
+  "blockedBy": [
+    "20"
+  ],
+  "owner": "Backend Senior"
+}

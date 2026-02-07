@@ -1,0 +1,235 @@
+{
+  "dashboard": {
+    "title": "BaseBook DEX - Router Performance",
+    "tags": ["basebook", "router"],
+    "timezone": "utc",
+    "schemaVersion": 36,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "type": "row",
+        "title": "Route Calculations",
+        "collapsed": false,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 }
+      },
+      {
+        "id": 2,
+        "type": "graph",
+        "title": "Route Calculation Rate",
+        "targets": [
+          {
+            "expr": "sum(rate(route_calculations_total[5m]))",
+            "legendFormat": "Total"
+          },
+          {
+            "expr": "sum(rate(route_calculations_failed_total[5m]))",
+            "legendFormat": "Failed"
+          },
+          {
+            "expr": "sum(rate(routes_not_found_total[5m]))",
+            "legendFormat": "No Route Found"
+          }
+        ],
+        "yaxes": [
+          { "format": "ops", "label": "Operations/sec" },
+          { "format": "short" }
+        ],
+        "gridPos": { "x": 0, "y": 1, "w": 12, "h": 8 }
+      },
+      {
+        "id": 3,
+        "type": "graph",
+        "title": "Route Calculation Duration",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(route_calculation_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(route_calculation_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(route_calculation_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P99"
+          }
+        ],
+        "yaxes": [
+          { "format": "s", "label": "Duration" },
+          { "format": "short" }
+        ],
+        "gridPos": { "x": 12, "y": 1, "w": 12, "h": 8 }
+      },
+      {
+        "id": 4,
+        "type": "row",
+        "title": "Cache Performance",
+        "collapsed": false,
+        "gridPos": { "x": 0, "y": 9, "w": 24, "h": 1 }
+      },
+      {
+        "id": 5,
+        "type": "gauge",
+        "title": "Cache Hit Rate",
+        "targets": [
+          {
+            "expr": "sum(rate(route_cache_hits_total[5m])) / sum(rate(route_cache_requests_total[5m])) * 100",
+            "legendFormat": "%"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 50, "color": "yellow" },
+                { "value": 80, "color": "green" }
+              ]
+            }
+          }
+        },
+        "gridPos": { "x": 0, "y": 10, "w": 6, "h": 6 }
+      },
+      {
+        "id": 6,
+        "type": "graph",
+        "title": "Cache Operations",
+        "targets": [
+          {
+            "expr": "sum(rate(route_cache_hits_total[5m]))",
+            "legendFormat": "Hits"
+          },
+          {
+            "expr": "sum(rate(route_cache_misses_total[5m]))",
+            "legendFormat": "Misses"
+          },
+          {
+            "expr": "sum(rate(route_cache_evictions_total[5m]))",
+            "legendFormat": "Evictions"
+          }
+        ],
+        "yaxes": [
+          { "format": "ops", "label": "Operations/sec" },
+          { "format": "short" }
+        ],
+        "gridPos": { "x": 6, "y": 10, "w": 18, "h": 6 }
+      },
+      {
+        "id": 7,
+        "type": "row",
+        "title": "Pool Graph",
+        "collapsed": false,
+        "gridPos": { "x": 0, "y": 16, "w": 24, "h": 1 }
+      },
+      {
+        "id": 8,
+        "type": "stat",
+        "title": "Pool Graph Nodes",
+        "targets": [
+          {
+            "expr": "pool_graph_nodes_total",
+            "legendFormat": "Nodes"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" }
+          }
+        },
+        "gridPos": { "x": 0, "y": 17, "w": 6, "h": 4 }
+      },
+      {
+        "id": 9,
+        "type": "stat",
+        "title": "Pool Graph Edges",
+        "targets": [
+          {
+            "expr": "pool_graph_edges_total",
+            "legendFormat": "Edges"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" }
+          }
+        },
+        "gridPos": { "x": 6, "y": 17, "w": 6, "h": 4 }
+      },
+      {
+        "id": 10,
+        "type": "stat",
+        "title": "Graph Last Update",
+        "targets": [
+          {
+            "expr": "time() - pool_graph_last_update_timestamp",
+            "legendFormat": "seconds ago"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "steps": [
+                { "value": 0, "color": "green" },
+                { "value": 60, "color": "yellow" },
+                { "value": 300, "color": "red" }
+              ]
+            }
+          }
+        },
+        "gridPos": { "x": 12, "y": 17, "w": 6, "h": 4 }
+      },
+      {
+        "id": 11,
+        "type": "row",
+        "title": "Resource Usage",
+        "collapsed": false,
+        "gridPos": { "x": 0, "y": 21, "w": 24, "h": 1 }
+      },
+      {
+        "id": 12,
+        "type": "graph",
+        "title": "CPU Usage",
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total{job=\"rust-router\"}[5m]) * 100",
+            "legendFormat": "CPU %"
+          }
+        ],
+        "yaxes": [
+          { "format": "percent", "label": "CPU", "max": 100 },
+          { "format": "short" }
+        ],
+        "gridPos": { "x": 0, "y": 22, "w": 12, "h": 8 }
+      },
+      {
+        "id": 13,
+        "type": "graph",
+        "title": "Memory Usage",
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes{job=\"rust-router\"} / 1024 / 1024",
+            "legendFormat": "RSS (MB)"
+          }
+        ],
+        "yaxes": [
+          { "format": "mbytes", "label": "Memory" },
+          { "format": "short" }
+        ],
+        "gridPos": { "x": 12, "y": 22, "w": 12, "h": 8 }
+      }
+    ]
+  }
+}

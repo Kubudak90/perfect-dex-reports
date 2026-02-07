@@ -1,0 +1,200 @@
+# ═══════════════════════════════════════════════════════════════
+# BaseBook DEX - Alertmanager Configuration
+# ═══════════════════════════════════════════════════════════════
+
+global:
+  # Default resolution timeout
+  resolve_timeout: 5m
+
+  # Slack global config (optional, can be overridden per receiver)
+  slack_api_url: "${SLACK_WEBHOOK_URL}"
+
+# Route tree for alert routing
+route:
+  # Default receiver
+  receiver: 'default'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'cluster', 'service']
+
+  # Wait before sending initial notification
+  group_wait: 30s
+
+  # Wait before sending notification about new alerts in group
+  group_interval: 5m
+
+  # Wait before re-sending notification
+  repeat_interval: 4h
+
+  # Child routes
+  routes:
+    # Critical alerts requiring immediate attention
+    - match:
+        severity: critical
+      receiver: 'critical'
+      continue: true
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 30m
+
+    # Page alerts (wake up on-call)
+    - match:
+        page: "true"
+      receiver: 'pagerduty'
+      continue: true
+      group_wait: 10s
+      repeat_interval: 15m
+
+    # Backend component alerts
+    - match:
+        component: backend
+      receiver: 'backend-team'
+      continue: false
+
+    # Router component alerts
+    - match:
+        component: router
+      receiver: 'router-team'
+      continue: false
+
+    # Infrastructure alerts
+    - match_re:
+        alertname: '(PodCrashLooping|ServiceDown|DatabaseDown|RedisDown)'
+      receiver: 'infrastructure-team'
+      continue: false
+
+    # Info/low severity alerts
+    - match:
+        severity: info
+      receiver: 'slack-info'
+      repeat_interval: 12h
+
+# Inhibition rules (prevent notification spam)
+inhibit_rules:
+  # Inhibit warning if critical is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'cluster', 'service']
+
+  # Inhibit service-specific alerts if service is down
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match_re:
+      alertname: '(HighErrorRate|HighLatency|.*)'
+    equal: ['job']
+
+  # Inhibit database-related alerts if database is down
+  - source_match:
+      alertname: 'DatabaseDown'
+    target_match_re:
+      alertname: '(DatabaseSlowQueries|DatabaseHighConnections)'
+    equal: ['instance']
+
+  # Inhibit pod alerts if pod is crash looping
+  - source_match:
+      alertname: 'PodCrashLooping'
+    target_match_re:
+      alertname: '(PodNotReady|PodRestartingFrequently)'
+    equal: ['pod']
+
+# Receivers define notification destinations
+receivers:
+  # Default receiver (catch-all)
+  - name: 'default'
+    slack_configs:
+      - channel: '#basebook-alerts'
+        title: 'BaseBook DEX Alert'
+        text: |-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          *Details:*
+            {{ range .Labels.SortedPairs }} • {{ .Name }}: {{ .Value }}
+            {{ end }}
+          {{ end }}
+        send_resolved: true
+
+  # Critical alerts (multiple channels)
+  - name: 'critical'
+    slack_configs:
+      - channel: '#basebook-critical'
+        title: '🚨 CRITICAL ALERT'
+        text: |-
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Impact:* {{ .Annotations.impact }}
+          *Action:* {{ .Annotations.action }}
+          *Runbook:* {{ .Annotations.runbook }}
+          {{ end }}
+        color: 'danger'
+        send_resolved: true
+    webhook_configs:
+      - url: '${WEBHOOK_URL}'
+        send_resolved: true
+
+  # PagerDuty for critical page alerts
+  - name: 'pagerduty'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        description: '{{ .GroupLabels.alertname }}: {{ .Annotations.summary }}'
+        details:
+          severity: '{{ .CommonLabels.severity }}'
+          impact: '{{ .CommonAnnotations.impact }}'
+          action: '{{ .CommonAnnotations.action }}'
+        send_resolved: true
+
+  # Backend team channel
+  - name: 'backend-team'
+    slack_configs:
+      - channel: '#backend-alerts'
+        title: 'Backend Alert'
+        text: |-
+          {{ range .Alerts }}
+          *{{ .Labels.severity | toUpper }}* - {{ .Annotations.summary }}
+          {{ .Annotations.description }}
+          {{ if .Annotations.action }}*Action:* {{ .Annotations.action }}{{ end }}
+          {{ end }}
+        send_resolved: true
+
+  # Router team channel
+  - name: 'router-team'
+    slack_configs:
+      - channel: '#router-alerts'
+        title: 'Router Alert'
+        text: |-
+          {{ range .Alerts }}
+          *{{ .Labels.severity | toUpper }}* - {{ .Annotations.summary }}
+          {{ .Annotations.description }}
+          {{ if .Annotations.action }}*Action:* {{ .Annotations.action }}{{ end }}
+          {{ end }}
+        send_resolved: true
+
+  # Infrastructure team channel
+  - name: 'infrastructure-team'
+    slack_configs:
+      - channel: '#infrastructure-alerts'
+        title: 'Infrastructure Alert'
+        text: |-
+          {{ range .Alerts }}
+          *{{ .Labels.severity | toUpper }}* - {{ .Annotations.summary }}
+          {{ .Annotations.description }}
+          {{ if .Annotations.action }}*Action Required:* {{ .Annotations.action }}{{ end }}
+          {{ end }}
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+        send_resolved: true
+
+  # Info alerts (low priority)
+  - name: 'slack-info'
+    slack_configs:
+      - channel: '#basebook-info'
+        title: 'Info: {{ .GroupLabels.alertname }}'
+        text: '{{ .CommonAnnotations.description }}'
+        send_resolved: false
+
+# Templates for custom formatting (optional)
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

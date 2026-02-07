@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: basebook-postgres
+    environment:
+      POSTGRES_USER: basebook
+      POSTGRES_PASSWORD: basebook
+      POSTGRES_DB: basebook_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U basebook"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - basebook-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: basebook-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - basebook-network
+
+  # Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: basebook-api
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://basebook:basebook@postgres:5432/basebook_dev
+      REDIS_URL: redis://redis:6379
+      RPC_URL_BASE: ${RPC_URL_BASE:-https://mainnet.base.org}
+      POOL_MANAGER_ADDRESS_8453: ${POOL_MANAGER_ADDRESS_8453:-0x0000000000000000000000000000000000000000}
+      SWAP_ROUTER_ADDRESS_8453: ${SWAP_ROUTER_ADDRESS_8453:-0x0000000000000000000000000000000000000000}
+      POSITION_MANAGER_ADDRESS_8453: ${POSITION_MANAGER_ADDRESS_8453:-0x0000000000000000000000000000000000000000}
+      QUOTER_ADDRESS_8453: ${QUOTER_ADDRESS_8453:-0x0000000000000000000000000000000000000000}
+      PERMIT2_ADDRESS_8453: 0x000000000022D473030F116dDEE9F6B43aC78BA3
+      LOG_LEVEL: info
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+    networks:
+      - basebook-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  basebook-network:
+    driver: bridge

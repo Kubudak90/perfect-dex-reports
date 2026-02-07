@@ -1,0 +1,193 @@
+# ═══════════════════════════════════════════════════════════════
+# BaseBook DEX - Recording Rules
+# ═══════════════════════════════════════════════════════════════
+# Pre-compute expensive queries for faster dashboard loading
+
+groups:
+  - name: recording_rules
+    interval: 30s
+    rules:
+      # ═════════════════════════════════════════════════════════
+      # API METRICS
+      # ═════════════════════════════════════════════════════════
+      - record: job:http_requests:rate5m
+        expr: sum(rate(http_requests_total[5m])) by (job)
+
+      - record: job:http_request_duration_seconds:p95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (job, le)
+          )
+
+      - record: job:http_request_duration_seconds:p99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (job, le)
+          )
+
+      - record: job:http_errors:rate5m
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (job)
+
+      - record: job:http_error_rate:ratio
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (job)
+          /
+          sum(rate(http_requests_total[5m])) by (job)
+
+      # ═════════════════════════════════════════════════════════
+      # ENDPOINT METRICS
+      # ═════════════════════════════════════════════════════════
+      - record: endpoint:http_requests:rate5m
+        expr: |
+          sum(rate(http_requests_total[5m])) by (endpoint, method)
+
+      - record: endpoint:http_request_duration_seconds:p95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (endpoint, method, le)
+          )
+
+      - record: endpoint:http_error_rate:ratio
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (endpoint)
+          /
+          sum(rate(http_requests_total[5m])) by (endpoint)
+
+      # ═════════════════════════════════════════════════════════
+      # SWAP METRICS
+      # ═════════════════════════════════════════════════════════
+      - record: swap:attempts:rate5m
+        expr: sum(rate(swap_attempts_total[5m]))
+
+      - record: swap:successes:rate5m
+        expr: sum(rate(swap_successes_total[5m]))
+
+      - record: swap:failures:rate5m
+        expr: sum(rate(swap_failures_total[5m]))
+
+      - record: swap:success_rate:ratio
+        expr: |
+          sum(rate(swap_successes_total[5m]))
+          /
+          sum(rate(swap_attempts_total[5m]))
+
+      - record: swap:duration_seconds:p95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(swap_duration_seconds_bucket[5m])) by (le)
+          )
+
+      - record: swap:volume_usd:rate1h
+        expr: sum(rate(swap_volume_usd_total[1h]))
+
+      # ═════════════════════════════════════════════════════════
+      # ROUTER METRICS
+      # ═════════════════════════════════════════════════════════
+      - record: router:calculations:rate5m
+        expr: sum(rate(route_calculations_total[5m]))
+
+      - record: router:calculation_duration_seconds:p95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(route_calculation_duration_seconds_bucket[5m])) by (le)
+          )
+
+      - record: router:calculation_duration_seconds:p99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(route_calculation_duration_seconds_bucket[5m])) by (le)
+          )
+
+      - record: router:failures:rate5m
+        expr: sum(rate(route_calculations_failed_total[5m]))
+
+      - record: router:no_routes_found:rate5m
+        expr: sum(rate(routes_not_found_total[5m]))
+
+      - record: router:cache_hit_rate:ratio
+        expr: |
+          sum(rate(route_cache_hits_total[5m]))
+          /
+          sum(rate(route_cache_requests_total[5m]))
+
+      # ═════════════════════════════════════════════════════════
+      # DATABASE METRICS
+      # ═════════════════════════════════════════════════════════
+      - record: db:connections_active:sum
+        expr: sum(pg_stat_database_numbackends)
+
+      - record: db:connections_used:ratio
+        expr: |
+          sum(pg_stat_database_numbackends)
+          /
+          pg_settings_max_connections
+
+      - record: db:query_duration_seconds:p95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(pg_stat_statements_exec_time_seconds_bucket[5m])) by (le)
+          )
+
+      - record: db:transactions:rate5m
+        expr: sum(rate(pg_stat_database_xact_commit[5m]))
+
+      - record: db:deadlocks:rate5m
+        expr: sum(rate(pg_stat_database_deadlocks[5m]))
+
+      # ═════════════════════════════════════════════════════════
+      # REDIS METRICS
+      # ═════════════════════════════════════════════════════════
+      - record: redis:commands:rate5m
+        expr: sum(rate(redis_commands_processed_total[5m]))
+
+      - record: redis:memory_used:ratio
+        expr: redis_memory_used_bytes / redis_memory_max_bytes
+
+      - record: redis:hit_rate:ratio
+        expr: |
+          rate(redis_keyspace_hits_total[5m])
+          /
+          (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))
+
+      - record: redis:evictions:rate5m
+        expr: rate(redis_evicted_keys_total[5m])
+
+      # ═════════════════════════════════════════════════════════
+      # RESOURCE USAGE
+      # ═════════════════════════════════════════════════════════
+      - record: pod:cpu_usage:ratio
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) by (pod)
+          /
+          sum(container_spec_cpu_quota{container!=""} / container_spec_cpu_period{container!=""}) by (pod)
+
+      - record: pod:memory_usage:ratio
+        expr: |
+          sum(container_memory_working_set_bytes{container!=""}) by (pod)
+          /
+          sum(container_spec_memory_limit_bytes{container!=""} > 0) by (pod)
+
+      - record: pod:memory_usage_bytes
+        expr: sum(container_memory_working_set_bytes{container!=""}) by (pod)
+
+      - record: pod:network_receive_bytes:rate5m
+        expr: sum(rate(container_network_receive_bytes_total[5m])) by (pod)
+
+      - record: pod:network_transmit_bytes:rate5m
+        expr: sum(rate(container_network_transmit_bytes_total[5m])) by (pod)
+
+      # ═════════════════════════════════════════════════════════
+      # BUSINESS METRICS
+      # ═════════════════════════════════════════════════════════
+      - record: business:users_active:count
+        expr: count(count(http_requests_total) by (user_id)) > 0
+
+      - record: business:revenue_usd:rate1h
+        expr: sum(rate(swap_fees_collected_usd_total[1h]))
+
+      - record: business:tvl_usd:current
+        expr: sum(pool_tvl_usd)
+
+      - record: business:volume_usd:rate24h
+        expr: sum(rate(swap_volume_usd_total[24h]))

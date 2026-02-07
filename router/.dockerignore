@@ -1,0 +1,25 @@
+# Rust
+target/
+Cargo.lock
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+
+# CI/CD
+.github
+
+# Documentation
+*.md
+docs
+
+# Misc
+.DS_Store
+Thumbs.db

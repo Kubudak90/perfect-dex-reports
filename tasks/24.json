@@ -1,0 +1,14 @@
+{
+  "id": "24",
+  "subject": "Build Pool list and detail pages",
+  "description": "Phase 2, Week 6 - Frontend Lead: Create Pool list page with PoolTable, sorting, filtering. Build Pool detail page with PoolHeader, PoolChart, PoolStats, PoolTransactions components.",
+  "activeForm": "Building Pool pages",
+  "status": "pending",
+  "blocks": [
+    "25"
+  ],
+  "blockedBy": [
+    "23"
+  ],
+  "owner": "Frontend Lead"
+}

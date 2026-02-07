@@ -1,0 +1,13 @@
+{
+  "id": "54",
+  "subject": "Implement Governance contracts and UI",
+  "description": "Phase 2+ - Full Stack: Implement Governor contract with timelock, staking mechanism, delegation. Build governance UI with ProposalList, VoteButton, StakeForm components.",
+  "activeForm": "Implementing governance",
+  "status": "pending",
+  "blocks": [],
+  "blockedBy": [
+    "4",
+    "26"
+  ],
+  "owner": "Solidity Lead"
+}

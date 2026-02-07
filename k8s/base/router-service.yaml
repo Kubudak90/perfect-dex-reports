@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: router-service
+  namespace: basebook
+  labels:
+    app: basebook-dex
+    component: router
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9091"
+spec:
+  type: ClusterIP
+  selector:
+    app: basebook-dex
+    component: router
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 9091
+      targetPort: metrics
+      protocol: TCP
+  sessionAffinity: None

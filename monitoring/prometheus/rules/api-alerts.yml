@@ -1,0 +1,160 @@
+# ═══════════════════════════════════════════════════════════════
+# BaseBook DEX - API Alert Rules
+# ═══════════════════════════════════════════════════════════════
+
+groups:
+  - name: api_alerts
+    interval: 30s
+    rules:
+      # ═════════════════════════════════════════════════════════
+      # ERROR RATE ALERTS
+      # ═════════════════════════════════════════════════════════
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+            /
+            sum(rate(http_requests_total[5m])) by (service)
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+          component: backend
+        annotations:
+          summary: "High error rate detected on {{ $labels.service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+          impact: "Users may experience service disruptions"
+          runbook: "https://docs.basebook.xyz/runbooks/high-error-rate"
+
+      - alert: CriticalErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+            /
+            sum(rate(http_requests_total[5m])) by (service)
+          ) * 100 > 10
+        for: 2m
+        labels:
+          severity: critical
+          component: backend
+          page: "true"
+        annotations:
+          summary: "CRITICAL: Very high error rate on {{ $labels.service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+          impact: "Service is severely degraded"
+          action: "Immediate investigation required. Consider rollback."
+
+      # ═════════════════════════════════════════════════════════
+      # LATENCY ALERTS
+      # ═════════════════════════════════════════════════════════
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service, endpoint)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "High latency on {{ $labels.service }}{{ $labels.endpoint }}"
+          description: "P95 latency is {{ $value | humanizeDuration }} (threshold: 1s)"
+          impact: "Users experiencing slow response times"
+
+      - alert: VeryHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service, endpoint)
+          ) > 3
+        for: 2m
+        labels:
+          severity: critical
+          component: backend
+        annotations:
+          summary: "CRITICAL: Very high latency on {{ $labels.service }}{{ $labels.endpoint }}"
+          description: "P95 latency is {{ $value | humanizeDuration }} (threshold: 3s)"
+          impact: "Service is experiencing severe performance issues"
+
+      - alert: SlowEndpoint
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[10m])) by (le, endpoint)
+          ) > 5
+        for: 10m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "Slow endpoint detected: {{ $labels.endpoint }}"
+          description: "P99 latency is {{ $value | humanizeDuration }}"
+          impact: "Some users experiencing timeouts"
+          action: "Investigate database queries or external API calls"
+
+      # ═════════════════════════════════════════════════════════
+      # REQUEST RATE ALERTS
+      # ═════════════════════════════════════════════════════════
+      - alert: UnusualRequestRate
+        expr: |
+          abs(
+            rate(http_requests_total[5m])
+            -
+            avg_over_time(rate(http_requests_total[5m])[1h:5m])
+          ) / avg_over_time(rate(http_requests_total[5m])[1h:5m]) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "Unusual request rate pattern detected"
+          description: "Request rate deviated by {{ $value | humanizePercentage }} from average"
+          impact: "Possible DDoS attack or traffic spike"
+
+      - alert: NoTraffic
+        expr: rate(http_requests_total[5m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+          component: backend
+          page: "true"
+        annotations:
+          summary: "No traffic received"
+          description: "API is not receiving any requests"
+          impact: "Service may be down or unreachable"
+          action: "Check Ingress, DNS, and service availability"
+
+      # ═════════════════════════════════════════════════════════
+      # SWAP SPECIFIC ALERTS
+      # ═════════════════════════════════════════════════════════
+      - alert: HighSwapFailureRate
+        expr: |
+          (
+            sum(rate(swap_failures_total[5m]))
+            /
+            sum(rate(swap_attempts_total[5m]))
+          ) * 100 > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: backend
+          feature: swap
+        annotations:
+          summary: "High swap failure rate"
+          description: "{{ $value | humanizePercentage }} of swaps are failing"
+          impact: "Users unable to complete swaps"
+          action: "Check router service, liquidity, and RPC connection"
+
+      - alert: SwapLatencyIncreased
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(swap_duration_seconds_bucket[5m])) by (le)
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+          component: backend
+          feature: swap
+        annotations:
+          summary: "Swap latency increased"
+          description: "P95 swap duration is {{ $value | humanizeDuration }}"
+          impact: "Users experiencing slow swap execution"
+          action: "Check router performance and RPC latency"

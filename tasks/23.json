@@ -1,0 +1,14 @@
+{
+  "id": "23",
+  "subject": "Build Add Liquidity page",
+  "description": "Phase 2, Week 5 - Frontend Lead: Create Add Liquidity page with RangeSelector, PriceRangeInput, LiquidityPreview components. Implement useAddLiquidity hook with all necessary state management.",
+  "activeForm": "Building Add Liquidity page",
+  "status": "pending",
+  "blocks": [
+    "24"
+  ],
+  "blockedBy": [
+    "12"
+  ],
+  "owner": "Frontend Lead"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "11",
+  "subject": "Build SwapWidget and useSwapQuote hook",
+  "description": "Phase 1, Week 3 - Frontend Lead: Create main SwapWidget component, implement useSwapQuote hook for fetching quotes with debounce, SwapDetails for showing price impact, route, and gas estimates.",
+  "activeForm": "Building SwapWidget",
+  "status": "pending",
+  "blocks": [
+    "12"
+  ],
+  "blockedBy": [
+    "10"
+  ],
+  "owner": "Frontend Lead"
+}

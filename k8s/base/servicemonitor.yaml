@@ -1,0 +1,37 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: backend-monitor
+  namespace: basebook
+  labels:
+    app: basebook-dex
+    component: backend
+spec:
+  selector:
+    matchLabels:
+      app: basebook-dex
+      component: backend
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+      scheme: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: router-monitor
+  namespace: basebook
+  labels:
+    app: basebook-dex
+    component: router
+spec:
+  selector:
+    matchLabels:
+      app: basebook-dex
+      component: router
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+      scheme: http

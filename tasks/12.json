@@ -1,0 +1,15 @@
+{
+  "id": "12",
+  "subject": "Complete functional Swap page with execution",
+  "description": "Phase 1, Week 4 - Frontend Lead: Complete Swap page with full functionality - approval flow, swap execution, transaction status tracking, SwapConfirmModal, error handling, and success notifications.",
+  "activeForm": "Completing Swap page",
+  "status": "pending",
+  "blocks": [
+    "23"
+  ],
+  "blockedBy": [
+    "11",
+    "7"
+  ],
+  "owner": "Frontend Lead"
+}

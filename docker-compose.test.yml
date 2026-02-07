@@ -1,0 +1,118 @@
+# ═══════════════════════════════════════════════════════════════
+# BaseBook DEX - Test/E2E Stack
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ═════════════════════════════════════════════════════════════
+  # TEST DATABASES
+  # ═════════════════════════════════════════════════════════════
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: basebook-postgres-test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: basebook_test
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - basebook-test-network
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: basebook-redis-test
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - basebook-test-network
+
+  # ═════════════════════════════════════════════════════════════
+  # TEST BACKEND SERVICES
+  # ═════════════════════════════════════════════════════════════
+  router-test:
+    build:
+      context: ./router
+      dockerfile: Dockerfile
+    container_name: basebook-router-test
+    environment:
+      RUST_LOG: warn
+      PORT: 8080
+    ports:
+      - "8081:8080"
+    networks:
+      - basebook-test-network
+
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: basebook-backend-test
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+      router-test:
+        condition: service_started
+    environment:
+      NODE_ENV: test
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgres@postgres-test:5432/basebook_test
+      REDIS_URL: redis://redis-test:6379
+      ROUTER_URL: http://router-test:8080
+      RPC_URL: https://base.llamarpc.com
+      CHAIN_ID: 8453
+      LOG_LEVEL: error
+    ports:
+      - "4000:4000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - basebook-test-network
+
+  # ═════════════════════════════════════════════════════════════
+  # TEST FRONTEND
+  # ═════════════════════════════════════════════════════════════
+  frontend-test:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: builder
+    container_name: basebook-frontend-test
+    depends_on:
+      backend-test:
+        condition: service_healthy
+    environment:
+      NODE_ENV: test
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_CHAIN_ID: 8453
+    ports:
+      - "3000:3000"
+    command: npm run dev
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - basebook-test-network
+
+# ═══════════════════════════════════════════════════════════════
+# NETWORKS
+# ═══════════════════════════════════════════════════════════════
+networks:
+  basebook-test-network:
+    driver: bridge

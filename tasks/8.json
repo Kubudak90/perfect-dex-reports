@@ -1,0 +1,14 @@
+{
+  "id": "8",
+  "subject": "Implement Redis caching and basic WebSocket server",
+  "description": "Phase 1, Week 4 - Backend Senior: Setup Redis caching layer with proper TTL strategies (price: 10s, pool: 30s, token: 5min). Implement basic WebSocket server for real-time price updates.",
+  "activeForm": "Setting up Redis cache and WebSocket",
+  "status": "pending",
+  "blocks": [
+    "19"
+  ],
+  "blockedBy": [
+    "7"
+  ],
+  "owner": "Backend Senior"
+}

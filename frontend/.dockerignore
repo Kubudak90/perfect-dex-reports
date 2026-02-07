@@ -1,0 +1,47 @@
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Next.js
+.next
+out
+build
+
+# Testing
+coverage
+.nyc_output
+test-results
+playwright-report
+e2e
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+
+# Documentation
+*.md
+docs
+README.md
+
+# Misc
+.DS_Store
+Thumbs.db

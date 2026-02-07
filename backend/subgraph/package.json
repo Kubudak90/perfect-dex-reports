@@ -1,0 +1,18 @@
+{
+  "name": "@basebook/subgraph",
+  "version": "1.0.0",
+  "description": "BaseBook DEX Subgraph",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy:local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 basebook-dex",
+    "create:local": "graph create --node http://localhost:8020/ basebook-dex",
+    "remove:local": "graph remove --node http://localhost:8020/ basebook-dex",
+    "deploy:studio": "graph deploy --studio basebook-dex",
+    "deploy:hosted": "graph deploy --product hosted-service <GITHUB_USERNAME>/basebook-dex"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.79.0",
+    "@graphprotocol/graph-ts": "^0.35.1"
+  }
+}

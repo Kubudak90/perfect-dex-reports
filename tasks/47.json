@@ -1,0 +1,14 @@
+{
+  "id": "47",
+  "subject": "Fix audit findings",
+  "description": "Phase 4, Week 15 - Solidity Team: Address all Critical and High severity audit findings. Document fixes and prepare for re-verification.",
+  "activeForm": "Fixing audit findings",
+  "status": "pending",
+  "blocks": [
+    "49"
+  ],
+  "blockedBy": [
+    "46"
+  ],
+  "owner": "Solidity Lead"
+}

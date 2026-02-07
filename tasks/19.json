@@ -1,0 +1,14 @@
+{
+  "id": "19",
+  "subject": "Implement Position endpoints and tick data API",
+  "description": "Phase 2, Week 5 - Backend Senior: Create endpoints for user positions (/positions, /positions/:tokenId), implement tick data endpoint for liquidity distribution charts.",
+  "activeForm": "Implementing Position endpoints",
+  "status": "pending",
+  "blocks": [
+    "20"
+  ],
+  "blockedBy": [
+    "8"
+  ],
+  "owner": "Backend Senior"
+}

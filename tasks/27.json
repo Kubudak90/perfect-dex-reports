@@ -1,0 +1,14 @@
+{
+  "id": "27",
+  "subject": "Implement multi-hop and split routing",
+  "description": "Phase 2, Week 5-6 - Rust Engineer: Implement multi-hop routing (max 4 hops) using Dijkstra/A* algorithm. Add split routing (max 3 splits) for large orders to minimize price impact.",
+  "activeForm": "Implementing advanced routing",
+  "status": "pending",
+  "blocks": [
+    "28"
+  ],
+  "blockedBy": [
+    "14"
+  ],
+  "owner": "Rust Engineer"
+}

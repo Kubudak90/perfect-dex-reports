@@ -1,0 +1,12 @@
+{
+  "id": "5",
+  "subject": "Setup monorepo, Fastify API skeleton, and PostgreSQL schema",
+  "description": "Phase 1, Week 1 - Backend Senior: Initialize monorepo structure with Turborepo/pnpm workspaces. Setup Fastify with TypeScript, create PostgreSQL schema for tokens, pools, swaps, positions tables using Drizzle ORM.",
+  "activeForm": "Setting up monorepo and database",
+  "status": "pending",
+  "blocks": [
+    "6"
+  ],
+  "blockedBy": [],
+  "owner": "Backend Senior"
+}

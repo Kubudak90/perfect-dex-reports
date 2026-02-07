@@ -1,0 +1,13 @@
+{
+  "id": "9",
+  "subject": "Setup Next.js 14 project with wagmi and layout",
+  "description": "Phase 1, Week 1 - Frontend Lead: Initialize Next.js 14 with App Router, setup TailwindCSS + Radix UI, configure wagmi v2 with wallet connection (RainbowKit/ConnectKit), create basic layout (Header, Footer, Navigation).",
+  "activeForm": "Setting up Next.js and wagmi",
+  "status": "pending",
+  "blocks": [
+    "10",
+    "52"
+  ],
+  "blockedBy": [],
+  "owner": "Frontend Lead"
+}

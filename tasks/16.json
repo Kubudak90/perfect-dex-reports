@@ -1,0 +1,14 @@
+{
+  "id": "16",
+  "subject": "Implement LimitOrderHook",
+  "description": "Phase 2, Week 6 - Solidity Researcher: Implement LimitOrderHook for on-chain limit orders. Handle order placement, cancellation, and execution when price conditions are met.",
+  "activeForm": "Implementing LimitOrderHook",
+  "status": "pending",
+  "blocks": [
+    "17"
+  ],
+  "blockedBy": [
+    "15"
+  ],
+  "owner": "Solidity Researcher"
+}

@@ -1,0 +1,1696 @@
+openapi: 3.0.3
+info:
+  title: BaseBook DEX API
+  description: |
+    REST API for the BaseBook decentralized exchange on Base (Chain ID 8453).
+    Provides swap quotes, pool/token data, liquidity positions, price oracles,
+    chart data, and protocol analytics.
+
+    **Authentication:** Most endpoints are public. Endpoints that require
+    authentication expect an `x-api-key` header. The swap quote endpoint is
+    rate-limited to 10 requests per minute per IP.
+  version: 1.0.0
+  contact:
+    name: BaseBook Team
+
+servers:
+  - url: http://localhost:3001
+    description: Local development
+  - url: https://api.basebook.xyz
+    description: Production
+
+tags:
+  - name: Health
+    description: Service health and readiness checks
+  - name: Swap
+    description: Swap quoting and routing
+  - name: Pools
+    description: Liquidity pool data
+  - name: Tokens
+    description: Token registry and market data
+  - name: Positions
+    description: Liquidity positions and tick data
+  - name: Analytics
+    description: Protocol-level analytics and rankings
+  - name: Oracle
+    description: On-chain price oracle and TWAP
+  - name: Charts
+    description: Historical OHLCV, TVL, volume, and fee data for pools
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: API key for authenticated endpoints
+
+  schemas:
+    # ── Shared ──────────────────────────────────────────────────────
+    EthAddress:
+      type: string
+      pattern: '^0x[a-fA-F0-9]{40}$'
+      example: '0x4200000000000000000000000000000000000006'
+
+    PoolId:
+      type: string
+      pattern: '^0x[a-fA-F0-9]{64}$'
+      example: '0xabc123...64-hex-chars'
+
+    TimeInterval:
+      type: string
+      enum: [1h, 4h, 1d, 1w, 1m]
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+    # ── Health ──────────────────────────────────────────────────────
+    HealthResponse:
+      type: object
+      required: [status, timestamp, mode]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded]
+        timestamp:
+          type: integer
+        mode:
+          type: string
+          enum: [mock, production]
+        reason:
+          type: string
+
+    DetailedHealthResponse:
+      type: object
+      required: [status, timestamp, mode, uptime, responseTime, dependencies, version]
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        timestamp:
+          type: integer
+        mode:
+          type: string
+          enum: [mock, production]
+        uptime:
+          type: number
+        responseTime:
+          type: string
+          example: '12ms'
+        dependencies:
+          type: object
+          properties:
+            database:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [connected, disconnected, mock, unknown]
+                poolHealthy:
+                  type: boolean
+                error:
+                  type: string
+            redis:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [connected, disconnected, mock, unknown]
+                error:
+                  type: string
+        version:
+          type: string
+
+    WsStatsResponse:
+      type: object
+      properties:
+        websocket:
+          type: object
+        workers:
+          type: object
+          properties:
+            priceSync:
+              type: object
+
+    # ── Swap ────────────────────────────────────────────────────────
+    RouteHop:
+      type: object
+      required: [poolId, tokenIn, tokenOut, fee, sqrtPriceX96, tick, liquidity]
+      properties:
+        poolId:
+          type: string
+        tokenIn:
+          $ref: '#/components/schemas/EthAddress'
+        tokenOut:
+          $ref: '#/components/schemas/EthAddress'
+        fee:
+          type: integer
+        sqrtPriceX96:
+          type: string
+        tick:
+          type: integer
+        liquidity:
+          type: string
+
+    QuoteResponse:
+      type: object
+      required:
+        - tokenIn
+        - tokenOut
+        - amountIn
+        - amountOut
+        - amountOutMin
+        - route
+        - routeString
+        - executionPrice
+        - priceImpact
+        - gasEstimate
+        - timestamp
+        - cached
+      properties:
+        tokenIn:
+          $ref: '#/components/schemas/EthAddress'
+        tokenOut:
+          $ref: '#/components/schemas/EthAddress'
+        amountIn:
+          type: string
+        amountOut:
+          type: string
+        amountOutMin:
+          type: string
+          description: Amount out with slippage applied
+        route:
+          type: array
+          items:
+            $ref: '#/components/schemas/RouteHop'
+        routeString:
+          type: string
+          example: 'WETH -> USDC'
+        executionPrice:
+          type: string
+          example: '2450.500000 USDC per WETH'
+        priceImpact:
+          type: number
+          description: Price impact percentage (0.15 = 0.15%)
+        priceImpactWarning:
+          type: string
+          enum: [none, low, medium, high]
+        gasEstimate:
+          type: integer
+        gasEstimateUsd:
+          type: number
+        timestamp:
+          type: integer
+        cached:
+          type: boolean
+
+    # ── Tokens ──────────────────────────────────────────────────────
+    Token:
+      type: object
+      required:
+        - id
+        - address
+        - chainId
+        - symbol
+        - name
+        - decimals
+        - isVerified
+        - isNative
+        - volume24hUsd
+        - tvlUsd
+        - priceChange24h
+      properties:
+        id:
+          type: integer
+        address:
+          $ref: '#/components/schemas/EthAddress'
+        chainId:
+          type: integer
+        symbol:
+          type: string
+        name:
+          type: string
+        decimals:
+          type: integer
+        logoUri:
+          type: string
+          nullable: true
+        isVerified:
+          type: boolean
+        isNative:
+          type: boolean
+        priceUsd:
+          type: string
+          nullable: true
+        volume24hUsd:
+          type: string
+        tvlUsd:
+          type: string
+        priceChange24h:
+          type: string
+
+    TokenListResponse:
+      type: object
+      required: [tokens, total, limit, offset]
+      properties:
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Token'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    # ── Pools ───────────────────────────────────────────────────────
+    PoolToken:
+      type: object
+      required: [id, address, symbol, name, decimals]
+      properties:
+        id:
+          type: integer
+        address:
+          $ref: '#/components/schemas/EthAddress'
+        symbol:
+          type: string
+        name:
+          type: string
+        decimals:
+          type: integer
+        logoUri:
+          type: string
+          nullable: true
+
+    Pool:
+      type: object
+      required:
+        - id
+        - poolId
+        - chainId
+        - token0
+        - token1
+        - feeTier
+        - tickSpacing
+        - sqrtPriceX96
+        - currentTick
+        - liquidity
+        - volume24hUsd
+        - volume24hToken0
+        - volume24hToken1
+        - fees24hUsd
+        - txCount24h
+        - tvlUsd
+        - tvlToken0
+        - tvlToken1
+        - apr24h
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+        poolId:
+          $ref: '#/components/schemas/PoolId'
+        chainId:
+          type: integer
+        token0:
+          $ref: '#/components/schemas/PoolToken'
+        token1:
+          $ref: '#/components/schemas/PoolToken'
+        feeTier:
+          type: integer
+        tickSpacing:
+          type: integer
+        hookAddress:
+          type: string
+          nullable: true
+        sqrtPriceX96:
+          type: string
+        currentTick:
+          type: integer
+        liquidity:
+          type: string
+        token0Price:
+          type: string
+          nullable: true
+        token1Price:
+          type: string
+          nullable: true
+        volume24hUsd:
+          type: string
+        volume24hToken0:
+          type: string
+        volume24hToken1:
+          type: string
+        fees24hUsd:
+          type: string
+        txCount24h:
+          type: integer
+        tvlUsd:
+          type: string
+        tvlToken0:
+          type: string
+        tvlToken1:
+          type: string
+        apr24h:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PoolDetail:
+      allOf:
+        - $ref: '#/components/schemas/Pool'
+        - type: object
+          properties:
+            volume7dUsd:
+              type: string
+            volume30dUsd:
+              type: string
+            fees7dUsd:
+              type: string
+            fees30dUsd:
+              type: string
+
+    PoolListResponse:
+      type: object
+      required: [pools, total, limit, offset]
+      properties:
+        pools:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pool'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    # ── Positions ───────────────────────────────────────────────────
+    PositionPoolTokenInfo:
+      type: object
+      required: [address, symbol, name, decimals]
+      properties:
+        address:
+          type: string
+        symbol:
+          type: string
+        name:
+          type: string
+        decimals:
+          type: integer
+
+    PositionSummary:
+      type: object
+      required: [tokenId, poolId, pool, tickLower, tickUpper, liquidity, tokensOwed0, tokensOwed1]
+      properties:
+        tokenId:
+          type: string
+        poolId:
+          type: string
+        pool:
+          type: object
+          properties:
+            token0:
+              $ref: '#/components/schemas/PositionPoolTokenInfo'
+            token1:
+              $ref: '#/components/schemas/PositionPoolTokenInfo'
+            feeTier:
+              type: integer
+        tickLower:
+          type: integer
+        tickUpper:
+          type: integer
+        liquidity:
+          type: string
+        tokensOwed0:
+          type: string
+        tokensOwed1:
+          type: string
+
+    PositionDetail:
+      type: object
+      required:
+        - tokenId
+        - owner
+        - poolId
+        - pool
+        - tickLower
+        - tickUpper
+        - liquidity
+        - feeGrowthInside0LastX128
+        - feeGrowthInside1LastX128
+        - tokensOwed0
+        - tokensOwed1
+      properties:
+        tokenId:
+          type: string
+        owner:
+          type: string
+        poolId:
+          type: string
+        pool:
+          type: object
+          properties:
+            token0:
+              $ref: '#/components/schemas/PositionPoolTokenInfo'
+            token1:
+              $ref: '#/components/schemas/PositionPoolTokenInfo'
+            feeTier:
+              type: integer
+            sqrtPrice:
+              type: string
+            tick:
+              type: integer
+        tickLower:
+          type: integer
+        tickUpper:
+          type: integer
+        liquidity:
+          type: string
+        feeGrowthInside0LastX128:
+          type: string
+        feeGrowthInside1LastX128:
+          type: string
+        tokensOwed0:
+          type: string
+        tokensOwed1:
+          type: string
+
+    TickData:
+      type: object
+      required: [tickIdx, liquidityGross, liquidityNet]
+      properties:
+        tickIdx:
+          type: integer
+        liquidityGross:
+          type: string
+        liquidityNet:
+          type: string
+
+    # ── Analytics ───────────────────────────────────────────────────
+    ProtocolOverview:
+      type: object
+      required: [tvlUsd, volume24h, volume7d, fees24h, fees7d, poolCount, txCount24h, timestamp]
+      properties:
+        tvlUsd:
+          type: string
+        volume24h:
+          type: string
+        volume7d:
+          type: string
+        fees24h:
+          type: string
+        fees7d:
+          type: string
+        poolCount:
+          type: integer
+        txCount24h:
+          type: integer
+        uniqueUsers24h:
+          type: integer
+        timestamp:
+          type: integer
+
+    AnalyticsTopPool:
+      type: object
+      required: [poolId, token0, token1, feeTier, tvlUsd, volume24h, fees24h, apr24h]
+      properties:
+        poolId:
+          type: string
+        token0:
+          type: object
+          properties:
+            address:
+              type: string
+            symbol:
+              type: string
+            name:
+              type: string
+        token1:
+          type: object
+          properties:
+            address:
+              type: string
+            symbol:
+              type: string
+            name:
+              type: string
+        feeTier:
+          type: integer
+        tvlUsd:
+          type: string
+        volume24h:
+          type: string
+        fees24h:
+          type: string
+        apr24h:
+          type: string
+
+    AnalyticsTopToken:
+      type: object
+      required: [address, symbol, name, priceUsd, priceChange24h, volume24h, tvl]
+      properties:
+        address:
+          type: string
+        symbol:
+          type: string
+        name:
+          type: string
+        priceUsd:
+          type: string
+        priceChange24h:
+          type: string
+        volume24h:
+          type: string
+        tvl:
+          type: string
+
+    TrendingPool:
+      type: object
+      required: [poolId, token0, token1, feeTier, volume24h, volumeChange, priceChange]
+      properties:
+        poolId:
+          type: string
+        token0:
+          type: object
+          properties:
+            address:
+              type: string
+            symbol:
+              type: string
+        token1:
+          type: object
+          properties:
+            address:
+              type: string
+            symbol:
+              type: string
+        feeTier:
+          type: integer
+        volume24h:
+          type: string
+        volumeChange:
+          type: string
+        priceChange:
+          type: string
+
+    # ── Oracle ──────────────────────────────────────────────────────
+    OraclePrice:
+      type: object
+      required: [address, symbol, priceUsd, priceEth, decimals, lastUpdated]
+      properties:
+        address:
+          type: string
+        symbol:
+          type: string
+        priceUsd:
+          type: string
+        priceEth:
+          type: string
+        decimals:
+          type: integer
+        lastUpdated:
+          type: integer
+
+    TWAPResponse:
+      type: object
+      required: [token, symbol, twapPriceUsd, spotPriceUsd, period, timestamp]
+      properties:
+        token:
+          type: string
+        symbol:
+          type: string
+        twapPriceUsd:
+          type: string
+        spotPriceUsd:
+          type: string
+        period:
+          type: integer
+          description: TWAP period in seconds
+        timestamp:
+          type: integer
+
+    # ── Charts ──────────────────────────────────────────────────────
+    OHLCVCandle:
+      type: object
+      required: [timestamp, open, high, low, close, volume, volumeUsd, txCount]
+      properties:
+        timestamp:
+          type: integer
+        open:
+          type: string
+        high:
+          type: string
+        low:
+          type: string
+        close:
+          type: string
+        volume:
+          type: string
+        volumeUsd:
+          type: string
+        txCount:
+          type: integer
+
+    TVLPoint:
+      type: object
+      required: [timestamp, tvlUsd, tvlToken0, tvlToken1]
+      properties:
+        timestamp:
+          type: integer
+        tvlUsd:
+          type: string
+        tvlToken0:
+          type: string
+        tvlToken1:
+          type: string
+
+    VolumePoint:
+      type: object
+      required: [timestamp, volumeUsd, volumeToken0, volumeToken1, feesUsd, txCount]
+      properties:
+        timestamp:
+          type: integer
+        volumeUsd:
+          type: string
+        volumeToken0:
+          type: string
+        volumeToken1:
+          type: string
+        feesUsd:
+          type: string
+        txCount:
+          type: integer
+
+    FeesPoint:
+      type: object
+      required: [timestamp, feesUsd, feesToken0, feesToken1]
+      properties:
+        timestamp:
+          type: integer
+        feesUsd:
+          type: string
+        feesToken0:
+          type: string
+        feesToken1:
+          type: string
+        apr:
+          type: number
+
+  parameters:
+    ChainIdQuery:
+      name: chainId
+      in: query
+      schema:
+        type: integer
+        default: 8453
+      description: Chain ID (defaults to Base mainnet)
+
+    PoolIdPath:
+      name: poolId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/PoolId'
+      description: Pool ID (keccak256 of PoolKey)
+
+    HistoryInterval:
+      name: interval
+      in: query
+      schema:
+        $ref: '#/components/schemas/TimeInterval'
+        default: 1d
+      description: Time bucket interval
+
+    HistoryFrom:
+      name: from
+      in: query
+      schema:
+        type: integer
+      description: Start timestamp (Unix seconds)
+
+    HistoryTo:
+      name: to
+      in: query
+      schema:
+        type: integer
+      description: End timestamp (Unix seconds)
+
+    HistoryLimit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 100
+      description: Maximum data points to return
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+# Default security: API key required. Public endpoints override with []
+security:
+  - ApiKeyAuth: []
+
+paths:
+  # ════════════════════════════════════════════════════════════════════
+  # Health
+  # ════════════════════════════════════════════════════════════════════
+  /health:
+    get:
+      operationId: getHealth
+      tags: [Health]
+      summary: Basic health check
+      description: Returns 200 when the service is healthy, 503 when degraded.
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is degraded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /health/detailed:
+    get:
+      operationId: getHealthDetailed
+      tags: [Health]
+      summary: Detailed health check with dependency status
+      description: |
+        Checks database and Redis connectivity and returns per-dependency status.
+        Returns 503 when any dependency is unhealthy.
+      security: []
+      responses:
+        '200':
+          description: All dependencies healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthResponse'
+        '503':
+          description: One or more dependencies unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthResponse'
+
+  /health/ws-stats:
+    get:
+      operationId: getWsStats
+      tags: [Health]
+      summary: WebSocket and worker statistics
+      security: []
+      responses:
+        '200':
+          description: Current WebSocket and worker stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WsStatsResponse'
+
+  # ════════════════════════════════════════════════════════════════════
+  # Swap
+  # ════════════════════════════════════════════════════════════════════
+  /v1/swap/quote:
+    get:
+      operationId: getSwapQuote
+      tags: [Swap]
+      summary: Get a swap quote
+      description: |
+        Returns a price quote for swapping tokenIn to tokenOut. Rate-limited
+        to 10 requests per minute per IP. Requires API key authentication.
+      parameters:
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: tokenIn
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/EthAddress'
+          description: Address of the input token
+        - name: tokenOut
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/EthAddress'
+          description: Address of the output token
+        - name: amountIn
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d+$'
+          description: Raw amount in (smallest unit, e.g. wei)
+        - name: slippage
+          in: query
+          schema:
+            type: number
+            minimum: 0.01
+            maximum: 50
+            default: 0.5
+          description: Slippage tolerance percentage
+        - name: exactInput
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Whether the amount is exact input
+      responses:
+        '200':
+          description: Swap quote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ════════════════════════════════════════════════════════════════════
+  # Tokens
+  # ════════════════════════════════════════════════════════════════════
+  /v1/tokens:
+    get:
+      operationId: getTokens
+      tags: [Tokens]
+      summary: List tokens
+      description: Returns a paginated list of tokens. Supports search and verified-only filter.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: verified
+          in: query
+          schema:
+            type: boolean
+          description: Filter to verified tokens only
+        - name: search
+          in: query
+          schema:
+            type: string
+            minLength: 1
+          description: Search by name or symbol
+      responses:
+        '200':
+          description: Paginated token list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/tokens/{address}:
+    get:
+      operationId: getToken
+      tags: [Tokens]
+      summary: Get token by address
+      security: []
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EthAddress'
+          description: Token contract address
+        - $ref: '#/components/parameters/ChainIdQuery'
+      responses:
+        '200':
+          description: Token details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ════════════════════════════════════════════════════════════════════
+  # Pools
+  # ════════════════════════════════════════════════════════════════════
+  /v1/pools:
+    get:
+      operationId: getPools
+      tags: [Pools]
+      summary: List liquidity pools
+      description: Returns a paginated, sortable list of pools with optional token and TVL filters.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [tvl, volume, apr, createdAt]
+            default: tvl
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: token0
+          in: query
+          schema:
+            $ref: '#/components/schemas/EthAddress'
+          description: Filter by token0 address
+        - name: token1
+          in: query
+          schema:
+            $ref: '#/components/schemas/EthAddress'
+          description: Filter by token1 address
+        - name: minTvl
+          in: query
+          schema:
+            type: number
+            minimum: 0
+          description: Minimum TVL in USD
+      responses:
+        '200':
+          description: Paginated pool list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/pools/{poolId}:
+    get:
+      operationId: getPool
+      tags: [Pools]
+      summary: Get pool details by ID
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PoolIdPath'
+        - $ref: '#/components/parameters/ChainIdQuery'
+      responses:
+        '200':
+          description: Pool detail including extended stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ════════════════════════════════════════════════════════════════════
+  # Positions
+  # ════════════════════════════════════════════════════════════════════
+  /v1/positions/{address}:
+    get:
+      operationId: getPositionsByAddress
+      tags: [Positions]
+      summary: Get all positions for an address
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EthAddress'
+          description: Owner wallet address
+        - $ref: '#/components/parameters/ChainIdQuery'
+      responses:
+        '200':
+          description: List of positions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [positions, total]
+                    properties:
+                      positions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PositionSummary'
+                      total:
+                        type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/positions/id/{tokenId}:
+    get:
+      operationId: getPositionById
+      tags: [Positions]
+      summary: Get position details by NFT token ID
+      parameters:
+        - name: tokenId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Position NFT token ID
+        - $ref: '#/components/parameters/ChainIdQuery'
+      responses:
+        '200':
+          description: Position detail
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/PositionDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/positions/ticks/{poolId}:
+    get:
+      operationId: getPoolTicks
+      tags: [Positions]
+      summary: Get tick data for a pool (liquidity distribution)
+      parameters:
+        - $ref: '#/components/parameters/PoolIdPath'
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: tickLower
+          in: query
+          schema:
+            type: integer
+          description: Lower tick bound filter
+        - name: tickUpper
+          in: query
+          schema:
+            type: integer
+          description: Upper tick bound filter
+      responses:
+        '200':
+          description: Tick data for the pool
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [ticks, currentTick, tickSpacing]
+                    properties:
+                      ticks:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TickData'
+                      currentTick:
+                        type: integer
+                      tickSpacing:
+                        type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ════════════════════════════════════════════════════════════════════
+  # Analytics
+  # ════════════════════════════════════════════════════════════════════
+  /v1/analytics/overview:
+    get:
+      operationId: getProtocolOverview
+      tags: [Analytics]
+      summary: Protocol overview statistics
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ChainIdQuery'
+      responses:
+        '200':
+          description: Protocol-level stats
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ProtocolOverview'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/analytics/tvl:
+    get:
+      operationId: getProtocolTVLHistory
+      tags: [Analytics]
+      summary: Protocol TVL history
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 1y, all]
+            default: 30d
+      responses:
+        '200':
+          description: TVL history data points
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [history]
+                    properties:
+                      history:
+                        type: array
+                        items:
+                          type: object
+                          required: [timestamp, tvlUsd]
+                          properties:
+                            timestamp:
+                              type: integer
+                            tvlUsd:
+                              type: string
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/analytics/volume:
+    get:
+      operationId: getProtocolVolumeHistory
+      tags: [Analytics]
+      summary: Protocol volume history
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 1y, all]
+            default: 30d
+      responses:
+        '200':
+          description: Volume history data points
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [history]
+                    properties:
+                      history:
+                        type: array
+                        items:
+                          type: object
+                          required: [timestamp, volumeUsd, feesUsd, txCount]
+                          properties:
+                            timestamp:
+                              type: integer
+                            volumeUsd:
+                              type: string
+                            feesUsd:
+                              type: string
+                            txCount:
+                              type: integer
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/analytics/top-pools:
+    get:
+      operationId: getTopPools
+      tags: [Analytics]
+      summary: Top pools by TVL, volume, fees, or APR
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum: [tvl, volume24h, fees24h, apr]
+            default: tvl
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Ranked pool list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [pools]
+                    properties:
+                      pools:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AnalyticsTopPool'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/analytics/top-tokens:
+    get:
+      operationId: getTopTokens
+      tags: [Analytics]
+      summary: Top tokens by volume, TVL, or price change
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum: [volume24h, tvl, priceChange24h]
+            default: volume24h
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Ranked token list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [tokens]
+                    properties:
+                      tokens:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AnalyticsTopToken'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/analytics/trending:
+    get:
+      operationId: getTrendingPools
+      tags: [Analytics]
+      summary: Trending pools by volume change
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: Trending pool list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [pools]
+                    properties:
+                      pools:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TrendingPool'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ════════════════════════════════════════════════════════════════════
+  # Oracle
+  # ════════════════════════════════════════════════════════════════════
+  /v1/oracle/prices:
+    get:
+      operationId: getOraclePrices
+      tags: [Oracle]
+      summary: Get current oracle prices for tokens
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: tokens
+          in: query
+          schema:
+            type: string
+          description: Comma-separated token addresses (omit for all tracked tokens)
+      responses:
+        '200':
+          description: Token price map
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [prices, timestamp]
+                    properties:
+                      prices:
+                        type: object
+                        additionalProperties:
+                          $ref: '#/components/schemas/OraclePrice'
+                      timestamp:
+                        type: integer
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/oracle/twap/{token}:
+    get:
+      operationId: getTWAPPrice
+      tags: [Oracle]
+      summary: Get TWAP (Time-Weighted Average Price) for a token
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EthAddress'
+          description: Token contract address
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: period
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 3600
+          description: TWAP period in seconds
+      responses:
+        '200':
+          description: TWAP and spot price
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/TWAPResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ════════════════════════════════════════════════════════════════════
+  # Charts
+  # ════════════════════════════════════════════════════════════════════
+  /v1/charts/ohlcv/{poolId}:
+    get:
+      operationId: getPoolOHLCV
+      tags: [Charts]
+      summary: Get OHLCV (candlestick) data for a pool
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PoolIdPath'
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - name: interval
+          in: query
+          schema:
+            $ref: '#/components/schemas/TimeInterval'
+            default: 1h
+          description: Candlestick interval
+        - $ref: '#/components/parameters/HistoryFrom'
+        - $ref: '#/components/parameters/HistoryTo'
+        - $ref: '#/components/parameters/HistoryLimit'
+      responses:
+        '200':
+          description: OHLCV candle array
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [interval, candles]
+                    properties:
+                      interval:
+                        $ref: '#/components/schemas/TimeInterval'
+                      candles:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/OHLCVCandle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/charts/tvl/{poolId}:
+    get:
+      operationId: getPoolTVLHistory
+      tags: [Charts]
+      summary: Get TVL history for a pool
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PoolIdPath'
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - $ref: '#/components/parameters/HistoryInterval'
+        - $ref: '#/components/parameters/HistoryFrom'
+        - $ref: '#/components/parameters/HistoryTo'
+        - $ref: '#/components/parameters/HistoryLimit'
+      responses:
+        '200':
+          description: TVL history
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [interval, history]
+                    properties:
+                      interval:
+                        $ref: '#/components/schemas/TimeInterval'
+                      history:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TVLPoint'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/charts/volume/{poolId}:
+    get:
+      operationId: getPoolVolumeHistory
+      tags: [Charts]
+      summary: Get volume history for a pool
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PoolIdPath'
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - $ref: '#/components/parameters/HistoryInterval'
+        - $ref: '#/components/parameters/HistoryFrom'
+        - $ref: '#/components/parameters/HistoryTo'
+        - $ref: '#/components/parameters/HistoryLimit'
+      responses:
+        '200':
+          description: Volume history
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [interval, history]
+                    properties:
+                      interval:
+                        $ref: '#/components/schemas/TimeInterval'
+                      history:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/VolumePoint'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/charts/fees/{poolId}:
+    get:
+      operationId: getPoolFeesHistory
+      tags: [Charts]
+      summary: Get fees history with APR for a pool
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PoolIdPath'
+        - $ref: '#/components/parameters/ChainIdQuery'
+        - $ref: '#/components/parameters/HistoryInterval'
+        - $ref: '#/components/parameters/HistoryFrom'
+        - $ref: '#/components/parameters/HistoryTo'
+        - $ref: '#/components/parameters/HistoryLimit'
+      responses:
+        '200':
+          description: Fees history with optional APR
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required: [interval, history]
+                    properties:
+                      interval:
+                        $ref: '#/components/schemas/TimeInterval'
+                      history:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FeesPoint'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
